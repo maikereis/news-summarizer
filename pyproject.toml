@@ -1,0 +1,31 @@
+[tool.poetry]
+name="New Summarizer"
+version="0.1.0"
+description=""
+authors=["Maike Reis <maikerdralcantara@gmail.com>"]
+packages = [{include = "*", from="src"}]
+license="MIT"
+readme="README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11.8"
+
+# Crawler
+selenium="^4.26.1"
+beautifulsoup4="^4.12.3"
+html2text="^2024.2.26"
+langchain-community= "^0.3.8"
+
+# Browser
+edgedriver-autoinstaller="^0.2.1"
+chromedriver-autoinstaller="^0.6.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.9"
+pre-commit = "^3.7.1"
+pytest = "^8.2.2"
