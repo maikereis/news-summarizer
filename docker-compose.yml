@@ -1,0 +1,25 @@
+services:
+  mongo:
+    image: mongo:latest
+    container_name: "news_summarizer_mongo"
+    logging:
+      options:
+        max-size: 1g
+    env_file: ".env"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    ports:
+      - ${MONGO_PORT}:27017
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - local
+    restart: always
+
+volumes:
+  mongo_data:
+
+networks:
+  local:
+    driver: bridge
