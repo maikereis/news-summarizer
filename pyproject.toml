@@ -11,7 +11,7 @@ readme="README.md"
 python = "^3.11.8"
 
 # Crawler
-selenium="^4.26.1"
+selenium = "^4.21.0"
 beautifulsoup4="^4.12.3"
 html2text="^2024.2.26"
 langchain-community= "^0.3.8"
@@ -27,5 +27,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.9"
-pre-commit = "^3.7.1"
+pre-commit = "^3.8.0"
+pre-commit-hooks = "^5.0.0"
 pytest = "^8.2.2"
+pytest-cov = "^6.0.0"
