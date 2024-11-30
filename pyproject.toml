@@ -10,6 +10,10 @@ readme="README.md"
 [tool.poetry.dependencies]
 python = "^3.11.8"
 
+# Database
+pymongo = "^4.6.2"
+pydantic-settings = "^2.6.1"
+
 # Crawler
 selenium = "^4.21.0"
 beautifulsoup4="^4.12.3"
@@ -19,6 +23,7 @@ langchain-community= "^0.3.8"
 # Browser
 edgedriver-autoinstaller="^0.2.1"
 chromedriver-autoinstaller="^0.6.4"
+
 
 
 [build-system]
