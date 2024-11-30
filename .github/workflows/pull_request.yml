@@ -12,6 +12,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mongo:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: username
+          MONGO_INITDB_ROOT_PASSWORD: password
+
     strategy:
       matrix:
         python-version: [3.11]
@@ -24,6 +33,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Create .env file
+      run: |
+        echo "MONGO_USERNAME=username" >> .env
+        echo "MONGO_PASSWORD=password" >> .env
+        echo "MONGO_PORT=27017" >> .env
 
     - name: Install dependencies
       run: |
