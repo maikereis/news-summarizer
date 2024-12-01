@@ -7,12 +7,13 @@ from typing import List
 import numpy as np
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from news_summarizer.crawler.base import BaseSeleniumCrawler
-from news_summarizer.domain.documents import Link
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+from news_summarizer.crawler.base import BaseSeleniumCrawler
+from news_summarizer.domain.documents import Link
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,6 @@ class G1Crawler(BaseSeleniumCrawler):
 
     def __init__(self, scroll_limit: int = 5) -> None:
         super().__init__(scroll_limit=scroll_limit)
-        self.links = None
 
     def scroll_page(self) -> None:
         load_mode = 0
@@ -139,7 +139,6 @@ class BandCrawler(BaseSeleniumCrawler):
 
     def __init__(self, scroll_limit: int = 2) -> None:
         super().__init__(scroll_limit=scroll_limit)
-        self.links = None
 
     def scroll_page(self) -> None:
         last_height = self.driver.execute_script("return document.body.scrollHeight")
@@ -187,7 +186,6 @@ class R7Crawler(BaseSeleniumCrawler):
 
     def __init__(self, scroll_limit: int = 2) -> None:
         super().__init__(scroll_limit=scroll_limit)
-        self.links = None
 
     def scroll_page(self) -> None:
         last_height = self.driver.execute_script("return document.body.scrollHeight")

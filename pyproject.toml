@@ -8,7 +8,7 @@ license="MIT"
 readme="README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11.8"
+python = ">=3.11.8,<3.13"
 
 # Database
 pymongo = "^4.6.2"
@@ -24,6 +24,8 @@ langchain-community= "^0.3.8"
 edgedriver-autoinstaller="^0.2.1"
 chromedriver-autoinstaller="^0.6.4"
 
+# Orchestration
+zenml = {extras = ["server"], version = "^0.70.0"}
 
 
 [build-system]
