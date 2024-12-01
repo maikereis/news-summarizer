@@ -1,10 +1,6 @@
 import logging
 import re
 
-from news_summarizer.config import settings
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
-
 logger = logging.getLogger(__name__)
 
 
@@ -81,22 +77,5 @@ class FakeMongoClient:
     def __setitem__(self, db_name: str, database: FakeDatabase):
         self.databases[db_name] = database
 
-
-class MongoDatabaseConnector:
-    _instance: MongoClient | None = None
-
-    def __new__(cls, *args, **kwargs) -> MongoClient:
-        if cls._instance is None:
-            try:
-                cls._instance = MongoClient(settings.mongo.dsn, serverSelectionTimeoutMS=5000)
-            except ConnectionFailure as e:
-                logger.error("Couldn't connect to the MongoDB database: %s", e)
-                raise
-
-        logger.info("Connection to successful to Mongo host:", settings.mongo.host)
-        return cls._instance
-
-
-connection = MongoDatabaseConnector()
 
 fake_connection = FakeMongoClient()
