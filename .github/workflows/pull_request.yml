@@ -51,10 +51,10 @@ jobs:
         poetry run ruff check .
 
     - name: Run tests
-        env:
-          MONGO_HOST: localhost
-          MONGO_PORT: ${{ env.MONGO_PORT }}
-          MONGO_USERNAME: ${{ env.MONGO_USERNAME }}
-          MONGO_PASSWORD: ${{ env.MONGO_PASSWORD }}
-        run: |
-          poetry run pytest -v
+      env:
+        MONGO_HOST: localhost
+        MONGO_PORT: ${{ env.MONGO_PORT }}
+        MONGO_USERNAME: ${{ env.MONGO_USERNAME }}
+        MONGO_PASSWORD: ${{ env.MONGO_PASSWORD }}
+      run: |
+        poetry run pytest -v
