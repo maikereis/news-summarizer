@@ -34,11 +34,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Create .env file
+    - name: Set environment variables
       run: |
-        echo "MONGO_USERNAME=username" >> .env
-        echo "MONGO_PASSWORD=password" >> .env
-        echo "MONGO_PORT=27017" >> .env
+        echo "MONGO_USERNAME=username" >> $GITHUB_ENV
+        echo "MONGO_PASSWORD=password" >> $GITHUB_ENV
+        echo "MONGO_PORT=27017" >> $GITHUB_ENV
 
     - name: Install dependencies
       run: |
@@ -51,5 +51,10 @@ jobs:
         poetry run ruff check .
 
     - name: Run tests
-      run: |
-        poetry run pytest
+        env:
+          MONGO_HOST: localhost
+          MONGO_PORT: ${{ env.MONGO_PORT }}
+          MONGO_USERNAME: ${{ env.MONGO_USERNAME }}
+          MONGO_PASSWORD: ${{ env.MONGO_PASSWORD }}
+        run: |
+          poetry run pytest -v
