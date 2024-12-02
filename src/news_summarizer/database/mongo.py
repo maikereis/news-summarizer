@@ -93,7 +93,7 @@ class MongoDatabaseConnector:
                 logger.error("Couldn't connect to the MongoDB database: %s", e)
                 raise
 
-        logger.info("Connection to successful to Mongo host:", settings.mongo.host)
+        logger.info("Successfully connected to Mongo at: %s", settings.mongo.host)
         return cls._instance
 
 
