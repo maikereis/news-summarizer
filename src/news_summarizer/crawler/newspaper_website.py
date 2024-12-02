@@ -108,9 +108,17 @@ class G1Crawler(BaseSeleniumCrawler):
             return int(match.group(1))
         return None
 
+    def accept_cookies(self):
+        button = WebDriverWait(self.driver, 20).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button.cookie-banner-lgpd_accept-button"))
+        )
+        button.click()
+
     def search(self, link: str, **kwargs) -> None:
         self.driver.get(link)
         time.sleep(5)
+        self.accept_cookies()
+        time.sleep(2)
         self.scroll_page()
         soup = BeautifulSoup(self.driver.page_source, "html.parser")
         elements = soup.find_all("a", href=True)
