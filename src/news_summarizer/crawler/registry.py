@@ -20,7 +20,7 @@ class CrawlerRegistry:
 
     def get(self, name):
         if name not in self._crawlers:
-            raise KeyError("Crawler '%s' not found.")
+            raise KeyError("Crawler '%s' not found.", name)
 
         logger.debug("Returning %s crawler", name)
         return self._crawlers[name]
@@ -32,7 +32,7 @@ class CrawlerRegistry:
         return list(self._components.keys())
 
 
-registry = CrawlerRegistry()
-registry.register("http://g1.globo.com/", G1Crawler)
-registry.register("https://www.r7.com/", BandCrawler)
-registry.register("https://bandnewstv.uol.com.br/", R7Crawler)
+crawler_registry = CrawlerRegistry()
+crawler_registry.register("https://g1.globo.com/", G1Crawler)
+crawler_registry.register("https://bandnewstv.uol.com.br/", BandCrawler)
+crawler_registry.register("https://www.r7.com/", R7Crawler)
