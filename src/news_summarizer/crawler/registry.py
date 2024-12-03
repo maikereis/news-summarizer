@@ -4,6 +4,7 @@ import re
 from .base import BaseCrawler
 from .newspaper_website import BandCrawler, G1Crawler, R7Crawler
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

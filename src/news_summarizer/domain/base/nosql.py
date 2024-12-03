@@ -1,12 +1,17 @@
+import logging
 import uuid
 from abc import ABC
 from typing import Dict, Generic, List, Type, TypeVar
 
 from pydantic import UUID4, BaseModel, Field
 
-from news_summarizer.database.mongo import fake_connection
+from news_summarizer.config import settings
+from news_summarizer.database.mongo import connection
 
-_database = fake_connection["null_database"]
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+_database = connection.get_database(settings.mongo.name)
 
 T = TypeVar("T", bound="NoSQLBaseLink")
 
@@ -43,7 +48,7 @@ class NoSQLBaseLink(BaseModel, Generic[T], ABC):
         for key, value in parsed.items():
             if isinstance(value, uuid.UUID):
                 parsed[key] = str(value)
-
+        logger.info("Inserting: %s", parsed)
         return parsed
 
     def model_dump(self: T, **kwargs) -> Dict:
@@ -61,6 +66,7 @@ class NoSQLBaseLink(BaseModel, Generic[T], ABC):
             collection.insert_one(self.to_mongo(**kwargs))
             return self
         except Exception:
+            logger.exception("Failed to insert document.")
             return None
 
     @classmethod
@@ -76,15 +82,18 @@ class NoSQLBaseLink(BaseModel, Generic[T], ABC):
 
             return new_instance
         except Exception:
+            logger.exception("Failed to retrieve document with filter options: %s", filter_options)
             raise
 
     @classmethod
-    def bulk_insert(cls: Type[T], links: List[T], **kwargs) -> bool:
+    def bulk_insert(cls: Type[T], documents: List[T], **kwargs) -> bool:
         collection = _database[cls.get_collection_name()]
         try:
-            collection.insert_many(link.to_mongo(**kwargs) for link in links)
+            collection.insert_many(doc.to_mongo(**kwargs) for doc in documents)
+
             return True
-        except Exception:
+        except Exception as exc:
+            logger.error("Failed to insert documents of type %s", cls.__name__, exc)
             return False
 
     @classmethod
@@ -96,15 +105,17 @@ class NoSQLBaseLink(BaseModel, Generic[T], ABC):
                 return cls.from_mongo(instance)
             return None
         except Exception:
+            logger.error("Failed to retrieve document")
             return None
 
     @classmethod
-    def bulk_find(cls: Type[T], **filter_options) -> List[T]:
+    def bulk_find(cls: Type[T], **filter_options) -> list[T]:
         collection = _database[cls.get_collection_name()]
         try:
             instances = collection.find(filter_options)
-            return [link for instance in instances if (link := cls.from_mongo(instance)) is not None]
+            return [document for instance in instances if (document := cls.from_mongo(instance)) is not None]
         except Exception:
+            logger.error("Failed to retrieve documents")
             return []
 
     @classmethod
