@@ -62,12 +62,12 @@ def test_link_save(mock_database):
 
     assert found_link is not None
     assert found_link["title"] == "Sample Link"
-    assert found_link["url"] == AnyUrl("http://example.com")
+    assert found_link["url"] == "http://example.com/"
 
 
 def test_link_get_or_create(mock_database):
     # Create a new link
-    link = Link.get_or_create(title="New Link", url=AnyUrl("http://example.com"))
+    link = Link.get_or_create(title="New Link", url="http://example.com")
     link_uuid = link.id
 
     # Ensure the link was saved
@@ -76,10 +76,10 @@ def test_link_get_or_create(mock_database):
 
     assert found_link is not None
     assert found_link["title"] == "New Link"
-    assert found_link["url"] == AnyUrl("http://example.com")
+    assert found_link["url"] == "http://example.com/"
 
     # Retrieve the same link without creating a new one
-    same_link = Link.get_or_create(title="New Link", url=AnyUrl("http://example.com"))
+    same_link = Link.get_or_create(title="New Link", url="http://example.com/")
     assert same_link.id == link_uuid
 
 

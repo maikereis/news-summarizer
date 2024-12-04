@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import AnyUrl, Field
+from pydantic import AnyUrl, Field, field_serializer
 
 from .base import NoSQLBaseLink
 
@@ -15,6 +15,10 @@ class Link(NoSQLBaseLink):
         default_factory=datetime.now,
         description="The timestamp when the link was extracted",
     )
+
+    @field_serializer("url")
+    def url_string(self, url: AnyUrl):
+        return str(url)
 
     class Settings:
         name = "link"

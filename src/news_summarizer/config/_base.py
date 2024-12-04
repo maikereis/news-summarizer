@@ -15,6 +15,7 @@ class HuggingFaceSettings(BaseSettings):
 
 class MongoSettings(BaseSettings):
     model_config = SettingsConfigDict(env=".env", env_prefix="MONGO_")
+    name: str = Field("name", json_schema_extra={"env": "NAME"})
     username: str = Field("user", json_schema_extra={"env": "USERNAME"})
     password: SecretStr = Field("pass", json_schema_extra={"env": "PASSWORD"})
     host: str = Field("localhost", json_schema_extra={"env": "HOST"})
