@@ -30,7 +30,7 @@ class CrawlerRegistry:
         return r"https://(www\.)?{}/*".format(re.escape(url))
 
     def list_crawlers(self):
-        return list(self._components.keys())
+        return list(self._crawlers.keys())
 
 
 crawler_registry = CrawlerRegistry()
