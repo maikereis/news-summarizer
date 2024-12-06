@@ -10,10 +10,10 @@ class WebDriverFactory:
         chrome_path = self.browser_locator.find_browser("google-chrome")
         edge_path = self.browser_locator.find_browser("microsoft-edge-stable")
 
-        if chrome_path:
-            creator = ChromeWebDriverCreator()
-        elif edge_path:
+        if edge_path:
             creator = EdgeWebDriverCreator()
+        elif chrome_path:
+            creator = ChromeWebDriverCreator()
         else:
             raise Exception("Neither Chrome nor Edge is installed. Please install one of them.")
 

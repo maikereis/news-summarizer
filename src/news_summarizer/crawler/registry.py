@@ -1,5 +1,5 @@
 import logging
-import re
+from urllib.parse import urlparse
 
 from .base import BaseCrawler
 from .newspaper_website import BandCrawler, G1Crawler, R7Crawler
@@ -20,14 +20,15 @@ class CrawlerRegistry:
         self._crawlers[name] = crawler
 
     def get(self, name):
+        parsed_domain = urlparse(name)
+        name = self._extract_netloc(parsed_domain)
+
         if name not in self._crawlers:
-            raise KeyError("Crawler '%s' not found.", name)
+            raise KeyError("Component '%s' not found.")
+        return self._crawlers[name]()
 
-        logger.debug("Returning %s crawler", name)
-        return self._crawlers[name]
-
-    def _extract_url(self, url):
-        return r"https://(www\.)?{}/*".format(re.escape(url))
+    def _extract_netloc(self, domain):
+        return f"{domain.scheme}://{domain.netloc}/"
 
     def list_crawlers(self):
         return list(self._crawlers.keys())
