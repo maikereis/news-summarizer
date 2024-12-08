@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 from .article_page import BandScraper, G1Scraper, R7Scraper
 from .base import BaseScraper
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +23,7 @@ class ScraperRegistry:
         name = self._extract_netloc(parsed_domain)
 
         if name not in self._scrapers:
-            raise KeyError("Component '%s' not found.")
+            raise KeyError("Scraper for '%s' not found." % name)
         return self._scrapers[name]()
 
     def _extract_netloc(self, domain):

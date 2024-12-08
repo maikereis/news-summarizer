@@ -15,19 +15,34 @@ from selenium.webdriver.support.ui import WebDriverWait
 from news_summarizer.crawler.base import BaseSeleniumCrawler
 from news_summarizer.domain.documents import Link
 
+logging.basicConfig(level=logging.ERROR)
+
 logger = logging.getLogger(__name__)
 
 
 def extract_date_from_url(url: str) -> str:
     # Regular expression to match the date in the format YYYY/MM/DD
-    match = re.search(r"(\d{4}/\d{2}/\d{2})", url)
 
-    if match:
-        date_str = match.group(1)
-        # Convert the date string to a datetime object
-        return datetime.strptime(date_str, "%Y/%m/%d")
-    else:
-        return None
+    try:
+        pattern0 = r"(\d{4}/\d{2}/\d{2})"
+        pattern1 = r"(\d{2}\d{2}\d{4})"
+
+        match = re.search(pattern0, url)
+
+        if match:
+            date_str = match.group(0)
+            # Convert the date string to a datetime object
+            return datetime.strptime(date_str, "%Y/%m/%d")
+
+        match = re.search(pattern1, url)
+
+        if match:
+            date_str = match.group(0)
+            # Convert the date string to a datetime object
+            return datetime.strptime(date_str, "%d%m%Y")
+    except Exception:
+        logger.error("Error trying to parse date for %s", url)
+    return None
 
 
 def extract_title(url: str) -> str:

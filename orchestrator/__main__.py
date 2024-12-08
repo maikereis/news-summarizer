@@ -3,7 +3,7 @@ from typing import List
 
 import typer
 import yaml
-from pipelines import crawl
+from pipelines import crawl, scrap
 
 app = typer.Typer()
 
@@ -22,6 +22,11 @@ def crawl_links(yaml_filepath: Path):
         return
 
     crawl(links)
+
+
+@app.command()
+def scrap_links():
+    scrap()
 
 
 if __name__ == "__main__":

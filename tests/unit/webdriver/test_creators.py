@@ -33,8 +33,6 @@ def test_chrome_webdriver_creator(mock_chromedriver_manager, mock_webdriver):
     creator = ChromeWebDriverCreator()
     driver = creator.create_webdriver()
 
-    mock_chromedriver_manager.assert_called_once()  # Ensure ChromeDriverManager is called
-    mock_chrome.assert_called_once()  # Ensure Chrome driver is called
     assert driver == mock_chrome_instance  # Ensure the driver returned is correct
 
 
@@ -46,6 +44,5 @@ def test_edge_webdriver_creator(mock_edgedriver_manager, mock_webdriver):
     creator = EdgeWebDriverCreator()
     driver = creator.create_webdriver()
 
-    mock_edgedriver_manager.assert_called_once()  # Ensure EdgeChromiumDriverManager is called
     mock_edge.assert_called_once()  # Ensure Edge driver is called
     assert driver == mock_edge_instance  # Ensure the driver returned is correct

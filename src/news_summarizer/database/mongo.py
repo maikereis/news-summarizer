@@ -90,8 +90,8 @@ class MongoDatabaseConnector:
         if cls._instance is None:
             try:
                 cls._instance = MongoClient(settings.mongo.dsn, serverSelectionTimeoutMS=5000)
-            except ConnectionFailure as e:
-                logger.error("Couldn't connect to the MongoDB database: %s", e)
+            except ConnectionFailure as conn_fail:
+                logger.error("Couldn't connect to the MongoDB database: %s", conn_fail)
                 raise
 
         logger.info("Successfully connected to Mongo at: %s", settings.mongo.host)

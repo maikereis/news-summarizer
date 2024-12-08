@@ -13,7 +13,6 @@ class BaseScraper(ABC):
 
 
 class BaseSeleniumScraper(BaseScraper, ABC):
-    def __init__(self, scroll_limit: int = 5) -> None:
+    def __init__(self) -> None:
         self.driver = WebDriverFactory(ShutilBrowserLocator()).get_webdriver()
-        self.scroll_limit = scroll_limit
         self.soup = None
