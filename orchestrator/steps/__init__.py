@@ -1,3 +1,3 @@
-from .craw_links import crawl_links
+from .crawl_links import crawl_links
 
 __all__ = ["crawl_links"]

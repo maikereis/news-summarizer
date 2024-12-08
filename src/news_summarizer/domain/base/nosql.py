@@ -8,7 +8,6 @@ from pydantic import UUID4, BaseModel, Field
 from news_summarizer.config import settings
 from news_summarizer.database.mongo import connection
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 _database = connection.get_database(settings.mongo.name)
@@ -48,7 +47,7 @@ class NoSQLBaseLink(BaseModel, Generic[T], ABC):
         for key, value in parsed.items():
             if isinstance(value, uuid.UUID):
                 parsed[key] = str(value)
-        logger.info("Inserting: %s", parsed)
+        logger.debug("Inserting: %s", parsed)
         return parsed
 
     def model_dump(self: T, **kwargs) -> Dict:
@@ -104,8 +103,8 @@ class NoSQLBaseLink(BaseModel, Generic[T], ABC):
             if instance:
                 return cls.from_mongo(instance)
             return None
-        except Exception:
-            logger.error("Failed to retrieve document")
+        except Exception as e:
+            logger.error("Failed to retrieve document: %s", e)
             return None
 
     @classmethod

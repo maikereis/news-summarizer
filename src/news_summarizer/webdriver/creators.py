@@ -6,6 +6,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
+chrome_driver_path = ChromeDriverManager().install()
+edge_driver_path = EdgeChromiumDriverManager().install()
+
 
 class WebDriverCreator(ABC):
     @abstractmethod
@@ -15,8 +18,7 @@ class WebDriverCreator(ABC):
 
 class ChromeWebDriverCreator(WebDriverCreator):
     def create_webdriver(self):
-        # print("Chrome is installed. Installing and using chromedriver...")
-        service = Service(ChromeDriverManager().install())
+        service = Service(chrome_driver_path)
         options = webdriver.ChromeOptions()
         self._set_common_options(options)
         return webdriver.Chrome(service=service, options=options)
@@ -29,19 +31,19 @@ class ChromeWebDriverCreator(WebDriverCreator):
         options.add_argument("--disable-popup-blocking")
         options.add_argument("--disable-notifications")
         options.add_argument("--disable-extensions")
+        options.add_argument("--disable-gpu")
         options.add_argument("--disable-background-networking")
         options.add_argument("--ignore-certificate-errors")
         options.add_argument("--profile.default_content_settings.cookies=2")
         options.add_argument(f"--user-data-dir={mkdtemp()}")
         options.add_argument(f"--data-path={mkdtemp()}")
         options.add_argument(f"--disk-cache-dir={mkdtemp()}")
-        # options.add_argument("--remote-debugging-port=9226") ## BUG HERE
+        # options.add_argument("--remote-debugging-port=9222") ## BUG HERE
 
 
 class EdgeWebDriverCreator(WebDriverCreator):
     def create_webdriver(self):
-        # print("Edge is installed. Installing and using edgedriver...")
-        service = Service(EdgeChromiumDriverManager().install())
+        service = Service(edge_driver_path)
         options = webdriver.EdgeOptions()
         self._set_common_options(options)
         return webdriver.Edge(service=service, options=options)
@@ -54,10 +56,11 @@ class EdgeWebDriverCreator(WebDriverCreator):
         options.add_argument("--disable-popup-blocking")
         options.add_argument("--disable-notifications")
         options.add_argument("--disable-extensions")
+        options.add_argument("--disable-gpu")
         options.add_argument("--disable-background-networking")
         options.add_argument("--ignore-certificate-errors")
         options.add_argument("--profile.default_content_settings.cookies=2")
         options.add_argument(f"--user-data-dir={mkdtemp()}")
         options.add_argument(f"--data-path={mkdtemp()}")
         options.add_argument(f"--disk-cache-dir={mkdtemp()}")
-        # options.add_argument("--remote-debugging-port=9226") ## BUG HERE
+        # options.add_argument("--remote-debugging-port=9222") ## BUG HERE

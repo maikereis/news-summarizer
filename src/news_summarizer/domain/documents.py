@@ -22,3 +22,19 @@ class Link(NoSQLBaseLink):
 
     class Settings:
         name = "link"
+
+
+class Article(NoSQLBaseLink):
+    title: str = Field(..., description="The title of the link")
+    subtitle: Optional[str] = Field(..., description="The subtitle of the link")
+    author: Optional[str] = Field(..., description="The author")
+    publication_date: Optional[datetime] = Field(None, description="The publication date of the link")
+    content: str = Field(..., description="Content")
+    url: AnyUrl = Field(description="The URL of the link")
+
+    @field_serializer("url")
+    def url_string(self, url: AnyUrl):
+        return str(url)
+
+    class Settings:
+        name = "article"

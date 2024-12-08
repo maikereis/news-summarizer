@@ -28,8 +28,7 @@ def crawl_links(newspapers_urls: list[str]) -> Annotated[list[str], "crawled_lin
 def _crawl_link(registry, url):
     try:
         if _is_valid_domain_url(url):
-            crawler_class = registry.get(url)
-            crawler_instance = crawler_class()
+            crawler_instance = registry.get(url)
             crawler_instance.search(link=url)
             return (True, url)
     except KeyError as ke:
