@@ -15,7 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from news_summarizer.crawler.base import BaseSeleniumCrawler
 from news_summarizer.domain.documents import Link
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ def extract_links(elements: List[Tag]):
     for element in elements:
         url = element.get("href")
 
-        title = element.text
+        title = element.get_text(strip=True)
         if len(title) < 5:
             title = extract_title(url)
 
@@ -82,10 +82,21 @@ def extract_links(elements: List[Tag]):
     return data
 
 
+def clean_html(soup):
+    # Remove style elements
+    for style in soup(["style"]):
+        style.decompose()
+
+    # Remove script elements
+    for script in soup(["script"]):
+        script.decompose()
+    return soup
+
+
 class G1Crawler(BaseSeleniumCrawler):
     model = Link
 
-    def __init__(self, scroll_limit: int = 5) -> None:
+    def __init__(self, scroll_limit: int = 10) -> None:
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self) -> None:
@@ -115,7 +126,7 @@ class G1Crawler(BaseSeleniumCrawler):
                 logger.debug("Click on element.")
                 load_more_link.click()
             except TimeoutException:
-                logger.info("see more link not found yet, scrolling one more time...")
+                logger.debug("see more link not found yet, scrolling one more time...")
 
     def _extract_page_number(self, url):
         match = re.search(r"pagina-(\d+)", url)
@@ -130,37 +141,49 @@ class G1Crawler(BaseSeleniumCrawler):
         button.click()
 
     def search(self, link: str, **kwargs) -> None:
-        self.driver.get(link)
-        time.sleep(5)
-        self.accept_cookies()
-        time.sleep(2)
-        self.scroll_page()
-        soup = BeautifulSoup(self.driver.page_source, "html.parser")
-        elements = soup.find_all("a", href=True)
-        hyperlinks = extract_links(elements)
-        self.driver.close()
+        try:
+            self.driver.get(link)
+            time.sleep(5)
+            self.accept_cookies()
+            time.sleep(2)
+            self.scroll_page()
+            soup = BeautifulSoup(self.driver.page_source, "html.parser")
+            soup = clean_html(soup)
+            elements = soup.find_all("a", href=True)
+            hyperlinks = extract_links(elements)
+            self.driver.close()
 
-        hyperlink_list = []
-        for hyperlink in hyperlinks:
-            try:
-                hyperlink_list.append(
-                    Link(
-                        title=hyperlink["title"],
-                        url=hyperlink["url"],
-                        source=link,
-                        published_at=hyperlink["published_at"],
+            hyperlink_list = []
+            for hyperlink in hyperlinks:
+                try:
+                    hyperlink_list.append(
+                        Link(
+                            title=hyperlink["title"],
+                            url=hyperlink["url"],
+                            source=link,
+                            published_at=hyperlink["published_at"],
+                        )
                     )
-                )
-            except ValueError:
-                continue
+                except ValueError as ve:
+                    logger.error(
+                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        hyperlink.get("title", "N/A"),
+                        hyperlink.get("url", "N/A"),
+                        ve,
+                    )
+                    continue
 
-        self.model.bulk_insert(hyperlink_list)
+            logger.info("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
+            self.model.bulk_insert(hyperlink_list)
+        except Exception as e:
+            logger.error("Error while crawling domain %s: %s", link, e)
+            self.driver.close()
 
 
 class BandCrawler(BaseSeleniumCrawler):
     model = Link
 
-    def __init__(self, scroll_limit: int = 2) -> None:
+    def __init__(self, scroll_limit: int = 10) -> None:
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self) -> None:
@@ -179,35 +202,51 @@ class BandCrawler(BaseSeleniumCrawler):
             current_scroll += 1
 
     def search(self, link: str, **kwargs) -> None:
-        self.driver.get(link)
-        time.sleep(5)
-        self.scroll_page()
-        soup = BeautifulSoup(self.driver.page_source, "html.parser")
-        elements = soup.find_all("a", href=True)
-        hyperlinks = extract_links(elements)
-        self.driver.close()
+        try:
+            self.driver.get(link)
+            time.sleep(5)
+            self.scroll_page()
+            soup = BeautifulSoup(self.driver.page_source, "html.parser")
+            soup = clean_html(soup)
+            elements = soup.find_all("a", href=True)
+            hyperlinks = extract_links(elements)
 
-        hyperlink_list = []
-        for hyperlink in hyperlinks:
-            try:
-                hyperlink_list.append(
-                    Link(
-                        title=hyperlink["title"],
-                        url=hyperlink["url"],
-                        source=link,
-                        published_at=hyperlink["published_at"],
+            if len(hyperlinks) == 0:
+                logger.error("No links found.")
+
+            self.driver.close()
+
+            hyperlink_list = []
+            for hyperlink in hyperlinks:
+                try:
+                    hyperlink_list.append(
+                        Link(
+                            title=hyperlink["title"],
+                            url=hyperlink["url"],
+                            source=link,
+                            published_at=hyperlink["published_at"],
+                        )
                     )
-                )
-            except ValueError:
-                continue
+                except ValueError as ve:
+                    logger.error(
+                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        hyperlink.get("title", "N/A"),
+                        hyperlink.get("url", "N/A"),
+                        ve,
+                    )
+                    continue
 
-        self.model.bulk_insert(hyperlink_list)
+            logger.info("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
+            self.model.bulk_insert(hyperlink_list)
+        except Exception as e:
+            logger.error("Error while crawling domain %s: %s", link, e)
+            self.driver.close()
 
 
 class R7Crawler(BaseSeleniumCrawler):
     model = Link
 
-    def __init__(self, scroll_limit: int = 2) -> None:
+    def __init__(self, scroll_limit: int = 10) -> None:
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self) -> None:
@@ -226,26 +265,44 @@ class R7Crawler(BaseSeleniumCrawler):
             current_scroll += 1
 
     def search(self, link: str, **kwargs) -> None:
-        self.driver.get(link)
-        time.sleep(5)
-        self.scroll_page()
-        soup = BeautifulSoup(self.driver.page_source, "html.parser")
-        elements = soup.find_all("a", href=True)
-        hyperlinks = extract_links(elements)
-        self.driver.close()
+        try:
+            logger.info("Start searching hyperlinks for link: %s", link)
+            self.driver.get(link)
+            time.sleep(5)
+            self.scroll_page()
+            soup = BeautifulSoup(self.driver.page_source, "html.parser")
+            soup = clean_html(soup)
+            elements = soup.find_all("a", href=True)
+            hyperlinks = extract_links(elements)
 
-        hyperlink_list = []
-        for hyperlink in hyperlinks:
-            try:
-                hyperlink_list.append(
-                    Link(
-                        title=hyperlink["title"],
-                        url=hyperlink["url"],
-                        source=link,
-                        published_at=hyperlink["published_at"],
+            if len(hyperlinks) == 0:
+                logger.error("No links found.")
+
+            self.driver.close()
+
+            hyperlink_list = []
+
+            for hyperlink in hyperlinks:
+                try:
+                    hyperlink_list.append(
+                        Link(
+                            title=hyperlink["title"],
+                            url=hyperlink["url"],
+                            source=link,
+                            published_at=hyperlink["published_at"],
+                        )
                     )
-                )
-            except ValueError:
-                continue
+                except ValueError as ve:
+                    logger.error(
+                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        hyperlink.get("title", "N/A"),
+                        hyperlink.get("url", "N/A"),
+                        ve,
+                    )
+                    continue
 
-        self.model.bulk_insert(hyperlink_list)
+            logger.info("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
+            self.model.bulk_insert(hyperlink_list)
+        except Exception as e:
+            logger.error("Error while crawling domain %s: %s", link, e)
+            self.driver.close()
