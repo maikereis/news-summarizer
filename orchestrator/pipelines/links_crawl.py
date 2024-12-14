@@ -1,4 +1,4 @@
-from steps.crawl_links import crawl_links
+from steps.etl.crawl_links import crawl_links
 from zenml import pipeline
 
 

@@ -3,7 +3,7 @@ from typing import List
 
 import typer
 import yaml
-from pipelines import crawl, scrap
+from pipelines import crawl, drop_duplicates, remove_garbage, scrap
 
 app = typer.Typer()
 
@@ -27,6 +27,16 @@ def crawl_links(yaml_filepath: Path):
 @app.command()
 def scrap_links():
     scrap()
+
+
+@app.command()
+def discard_links():
+    remove_garbage()
+
+
+@app.command()
+def deduplicate():
+    drop_duplicates()
 
 
 if __name__ == "__main__":

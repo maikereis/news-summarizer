@@ -1,4 +1,4 @@
-from steps.scrap_links import scrap_links
+from steps.etl.scrap_links import scrap_links
 from zenml import pipeline
 
 
