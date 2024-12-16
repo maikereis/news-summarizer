@@ -25,17 +25,17 @@ def crawl_links(yaml_filepath: Path):
 
 
 @app.command()
+def clean_links():
+    remove_garbage()
+
+
+@app.command()
 def scrap_links():
     scrap()
 
 
 @app.command()
-def discard_links():
-    remove_garbage()
-
-
-@app.command()
-def deduplicate():
+def deduplicate_articles():
     drop_duplicates()
 
 

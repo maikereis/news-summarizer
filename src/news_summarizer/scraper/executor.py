@@ -28,12 +28,12 @@ class ScraperExecutor:
             for future in as_completed(futures):
                 link = futures[future]
                 try:
-                    results[link] = future.result()
-                    logger.debug("Task completed with result: %s", results[link])
+                    result = future.result()
+                    results[link] = result
+                    logger.debug("Task completed with result: %s", result)
                 except Exception as e:
                     logger.error("Error occurred during task execution: %s", e)
                     results[link] = False
-
         return results
 
     def _task_wrapper(self, function: Callable, *args, **kwargs) -> None:
