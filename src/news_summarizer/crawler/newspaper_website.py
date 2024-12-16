@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 from typing import List
 
-import numpy as np
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 from selenium.common.exceptions import TimeoutException
@@ -105,10 +104,15 @@ class G1Crawler(BaseSeleniumCrawler):
         last_page_number = 0
 
         while True:
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(np.random.randint(2, 5))
-            # Wait for the "Veja mais" link to appear with the next page number
             try:
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                # time.sleep(np.random.randint(2, 5))
+                WebDriverWait(self.driver, 5).until(
+                    lambda driver: driver.execute_script(
+                        "return window.pageYOffset + window.innerHeight >= document.body.scrollHeight"
+                    )
+                )
+
                 logger.debug("Waiting the element to be clickable.")
                 load_more_link = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.CSS_SELECTOR, "div.load-more a"))
@@ -125,8 +129,9 @@ class G1Crawler(BaseSeleniumCrawler):
                         break
                 logger.debug("Click on element.")
                 load_more_link.click()
-            except TimeoutException:
-                logger.debug("see more link not found yet, scrolling one more time...")
+            except TimeoutException as te:
+                logger.error("Error trying to scroll page: %s", te)
+                continue
 
     def _extract_page_number(self, url):
         match = re.search(r"pagina-(\d+)", url)
@@ -190,16 +195,27 @@ class BandCrawler(BaseSeleniumCrawler):
         last_height = self.driver.execute_script("return document.body.scrollHeight")
         current_scroll = 0
         while True:
-            logger.debug("Scrolling page until bottom.")
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(5)
-            logger.debug("Update the page height.")
-            new_height = self.driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height or (self.scroll_limit and current_scroll >= self.scroll_limit):
-                logger.debug("The page height is the same as the last or we've reached the scroll limit.")
-                break
-            last_height = new_height
-            current_scroll += 1
+            try:
+                logger.debug("Scrolling page until bottom.")
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+                # time.sleep(5)
+                WebDriverWait(self.driver, 5).until(
+                    lambda driver: driver.execute_script(
+                        "return window.pageYOffset + window.innerHeight >= document.body.scrollHeight"
+                    )
+                )
+
+                logger.debug("Update the page height.")
+                new_height = self.driver.execute_script("return document.body.scrollHeight")
+                if new_height == last_height or (self.scroll_limit and current_scroll >= self.scroll_limit):
+                    logger.debug("The page height is the same as the last or we've reached the scroll limit.")
+                    break
+                last_height = new_height
+                current_scroll += 1
+            except TimeoutException as te:
+                logger.error("Error trying to scroll page: %s", te)
+                continue
 
     def search(self, link: str, **kwargs) -> None:
         try:
@@ -253,16 +269,26 @@ class R7Crawler(BaseSeleniumCrawler):
         last_height = self.driver.execute_script("return document.body.scrollHeight")
         current_scroll = 0
         while True:
-            logger.debug("Scrolling page until bottom.")
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(5)
-            logger.debug("Update the page height.")
-            new_height = self.driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height or (self.scroll_limit and current_scroll >= self.scroll_limit):
-                logger.debug("The page height is the same as the last or we've reached the scroll limit.")
-                break
-            last_height = new_height
-            current_scroll += 1
+            try:
+                logger.debug("Scrolling page until bottom.")
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                # time.sleep(5)
+                WebDriverWait(self.driver, 5).until(
+                    lambda driver: driver.execute_script(
+                        "return window.pageYOffset + window.innerHeight >= document.body.scrollHeight"
+                    )
+                )
+
+                logger.debug("Update the page height.")
+                new_height = self.driver.execute_script("return document.body.scrollHeight")
+                if new_height == last_height or (self.scroll_limit and current_scroll >= self.scroll_limit):
+                    logger.debug("The page height is the same as the last or we've reached the scroll limit.")
+                    break
+                last_height = new_height
+                current_scroll += 1
+            except TimeoutException as te:
+                logger.debug("Error trying to scroll page: %s", te)
+                continue
 
     def search(self, link: str, **kwargs) -> None:
         try:

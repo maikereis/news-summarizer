@@ -2,7 +2,7 @@ import logging
 
 from news_summarizer.config import settings
 from news_summarizer.database.mongo import MongoDatabaseConnector
-from news_summarizer.domain.documents import Link
+from news_summarizer.domain.documents import Article
 from zenml import step
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ database = client.get_database(settings.mongo.name)
 
 @step
 def drop_duplicated_articles():
-    collection = database[Link.get_collection_name()]
+    collection = database[Article.get_collection_name()]
 
     duplicates = _search_duplicates(collection, group_by="url")
     status = _drop_duplicates(collection, duplicates, sort_key="extracted_at")
@@ -40,10 +40,8 @@ def _drop_duplicates(collection, duplicates_iterator, sort_key=None, descending=
                 logger.info("No documents found for IDs: %s", ids)
                 continue
 
-            if sort_key:
-                docs.sort(key=lambda doc: doc.get(sort_key, None), reverse=descending)
-
             ids_to_remove = [doc["_id"] for doc in docs[1:]]
+
             result = collection.delete_many({"_id": {"$in": ids_to_remove}})
 
             logger.info("Result: %s", result)

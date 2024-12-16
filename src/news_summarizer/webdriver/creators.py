@@ -6,8 +6,8 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
-chrome_driver_path = ChromeDriverManager().install()
-edge_driver_path = EdgeChromiumDriverManager().install()
+_chrome_driver_path = ChromeDriverManager().install()
+_edge_driver_path = EdgeChromiumDriverManager().install()
 
 
 class WebDriverCreator(ABC):
@@ -17,8 +17,13 @@ class WebDriverCreator(ABC):
 
 
 class ChromeWebDriverCreator(WebDriverCreator):
+    _driver_path = None
+
     def create_webdriver(self):
-        service = Service(chrome_driver_path)
+        if not ChromeWebDriverCreator._driver_path:
+            ChromeWebDriverCreator._driver_path = _chrome_driver_path
+        # print("Chrome is installed. Installing and using chromedriver...")
+        service = Service(ChromeWebDriverCreator._driver_path)
         options = webdriver.ChromeOptions()
         self._set_common_options(options)
         return webdriver.Chrome(service=service, options=options)
@@ -42,8 +47,13 @@ class ChromeWebDriverCreator(WebDriverCreator):
 
 
 class EdgeWebDriverCreator(WebDriverCreator):
+    _driver_path = None
+
     def create_webdriver(self):
-        service = Service(edge_driver_path)
+        if not EdgeWebDriverCreator._driver_path:
+            EdgeWebDriverCreator._driver_path = _edge_driver_path
+        # print("Edge is installed. Installing and using edgedriver...")
+        service = Service(EdgeWebDriverCreator._driver_path)
         options = webdriver.EdgeOptions()
         self._set_common_options(options)
         return webdriver.Edge(service=service, options=options)
