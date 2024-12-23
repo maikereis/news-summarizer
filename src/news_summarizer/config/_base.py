@@ -38,9 +38,17 @@ class QdrantSettings(BaseSettings):
     model_config = SettingsConfigDict(env=".env", env_prefix="QDRANT_")
     use_cloud: bool = Field(False, json_schema_extra={"env": "USE_CLOUD"})
     host: str = Field("localhost", json_schema_extra={"env": "DATABASE_HOST"})
-    port: int = Field(6333, json_schema_extra={"env": "DATABASE_PORT"})
+    rest_port: int = Field(6333, json_schema_extra={"env": "REST_API_PORT"})
+    grpc_port: int = Field(6334, json_schema_extra={"env": "GRPC_API_PORT"})
     cloud_url: str = Field("", json_schema_extra={"env": "CLOUD_URL"})
     apikey: SecretStr | None = Field(None, json_schema_extra={"env": "APIKEY"})
+
+
+class RAGSettings(BaseSettings):
+    model_config = SettingsConfigDict(env=".env", env_prefix="RAG_", protected_namespaces=("settings_",))
+    embedding_model_id: str = Field(None, json_schema_extra={"env": "EMBEDDING_MODEL_ID"})
+    reranking_cross_encoder_model_id: str = Field(None, json_schema_extra={"env": "RERANKING_CROSS_ENCODER_MODEL_ID"})
+    model_device: str = Field("cpu", json_schema_extra={"env": "MODEL_DEVICE"})
 
 
 class Settings:
@@ -50,6 +58,7 @@ class Settings:
         self.mongo = MongoSettings()
         self.aws = AWSSettings()
         self.qdrant = QdrantSettings()
+        self.rag = RAGSettings()
 
     @classmethod
     def load_settings(cls) -> "Settings":
