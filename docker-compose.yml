@@ -17,6 +17,22 @@ services:
       - local
     restart: always
 
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: "news_summarizer_qdrant"
+    env_file: ".env"
+    ports:
+      - ${QDRANT_REST_API_PORT}:6333
+      - ${QDRANT_GRPC_API_PORT}:6334
+    #expose:
+    #  - 6333
+    #  - 6334
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - local
+    restart: always
+
   mysql:
     image: mysql:8.0
     container_name: zenml_mysql
@@ -48,6 +64,7 @@ services:
 volumes:
   mongo_data:
   mysql_data:
+  qdrant_data:
 
 networks:
   local:
