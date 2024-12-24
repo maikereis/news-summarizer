@@ -124,6 +124,16 @@ class VectorBaseDocument(BaseModel, Generic[T], ABC):
         return documents, next_offset
 
     @classmethod
+    def search(cls: Type[T], query_vector: list, limit: int = 10, **kwargs) -> list[T]:
+        try:
+            documents = cls._search(query_vector=query_vector, limit=limit, **kwargs)
+        except Exception:
+            logger.error("Failed to search documents in: %s", cls.get_collection_name())
+            documents = []
+
+        return documents
+
+    @classmethod
     def _search(cls: Type[T], query_vector: list, limit: int = 10, **kwargs) -> list[T]:
         collection_name = cls.get_collection_name()
         records = connection.search(
@@ -243,7 +253,7 @@ class VectorBaseDocument(BaseModel, Generic[T], ABC):
         if attribute_name in cls.__annotations__:
             return True
 
-        for base in cls.__base__:
+        for base in cls.__bases__:
             if hasattr(base, "_has_class_attribute") and base._has_class_attribute(attribute_name):
                 return True
 

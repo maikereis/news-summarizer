@@ -19,7 +19,7 @@ class FakeMongoCollection:
         if document["_id"] in self.data:
             raise ValueError("Duplicate _id found")
         self.data[document["_id"]] = document
-        logger.debug("Inserted document:", document)
+        logger.debug("Inserted document: %s", document)
 
     def insert_many(self, documents):
         if not documents:
@@ -30,12 +30,12 @@ class FakeMongoCollection:
             if document["_id"] in self.data:
                 raise ValueError("Duplicate _id found")
             self.data[document["_id"]] = document
-        logger.debug("Inserted documents:", documents)
+        logger.debug("Inserted documents: %s", documents)
 
     def find_one(self, query):
         for document in self.data.values():
             if all(self._match_query(document, key, value) for key, value in query.items()):
-                logger.debug("Found document:", document)
+                logger.debug("Found document: %s", document)
                 return document
         logger.debug("No document found!")
         return None
