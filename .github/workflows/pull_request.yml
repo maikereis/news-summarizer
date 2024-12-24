@@ -40,6 +40,15 @@ jobs:
         echo "MONGO_PASSWORD=password" >> $GITHUB_ENV
         echo "MONGO_PORT=27017" >> $GITHUB_ENV
 
+        echo "QDRANT_USE_CLOUD=False" >> $GITHUB_ENV
+        echo "QDRANT_DATABASE_HOST=localhost" >> $GITHUB_ENV
+        echo "QDRANT_REST_API_PORT=6333" >> $GITHUB_ENV
+        echo "QDRANT_GRPC_API_PORT=6334" >> $GITHUB_ENV
+        
+        echo "RAG_EMBEDDING_MODEL_ID=sentence-transformers/all-MiniLM-L6-v2" >> $GITHUB_ENV
+        echo "RAG_RERANKING_CROSS_ENCODER_MODEL_ID=cross-encoder/ms-marco-MiniLM-L-4-v2" >> $GITHUB_ENV
+        echo "RAG_MODEL_DEVICE=cpu" >> $GITHUB_ENV
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
