@@ -243,7 +243,7 @@ class VectorBaseDocument(BaseModel, Generic[T], ABC):
         if attribute_name in cls.__annotations__:
             return True
 
-        for base in cls.__base__:
+        for base in cls.__bases__:
             if hasattr(base, "_has_class_attribute") and base._has_class_attribute(attribute_name):
                 return True
 
