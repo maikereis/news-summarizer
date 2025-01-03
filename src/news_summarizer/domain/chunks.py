@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import AnyUrl, Field, field_serializer
+from pydantic import UUID4, AnyUrl, Field, field_serializer
 
 from .base import VectorBaseDocument
 
@@ -13,6 +13,7 @@ class ArticleChunk(VectorBaseDocument):
     publication_date: Optional[datetime] = Field(None, description="The publication date of the link")
     content: str = Field(..., description="Content")
     url: AnyUrl = Field(description="The URL of the link")
+    document_id: UUID4
     metadata: dict = Field(default_factory=dict)
 
     @field_serializer("url")
