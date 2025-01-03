@@ -77,13 +77,16 @@ class VectorBaseDocument(BaseModel, Generic[T], ABC):
     @classmethod
     def bulk_insert(cls: Type[T], documents: list["VectorBaseDocument"]) -> bool:
         try:
+            cls.get_or_create_collection()
+        except Exception as exc:
+            logger.error("Neither the collection exists or can be created: %s.", exc)
+            return False
+
+        try:
             cls._bulk_insert(documents)
-        except Exception:
-            cls.create_collection()
-            try:
-                cls._bulk_insert(documents)
-            except Exception:
-                return False
+        except Exception as exc:
+            logger.error("Error trying to insert documents: %s.", exc)
+            return False
         return True
 
     @classmethod

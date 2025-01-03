@@ -9,10 +9,10 @@ from transformers import AutoTokenizer
 
 from news_summarizer.config import settings
 
-from .base import SingletonMeta
+from .base import SingletonBase
 
 
-class EmbeddingModel(SingletonMeta):
+class EmbeddingModel(SingletonBase):
     def __init__(
         self,
         model_id: str = settings.rag.embedding_model_id,
@@ -35,7 +35,7 @@ class EmbeddingModel(SingletonMeta):
 
     @cached_property
     def embedding_size(self) -> int:
-        dummy_embedding = self._model.encode("")
+        dummy_embedding = self._model.encode("", show_progress_bar=False)
         return dummy_embedding.shape[0]
 
     @property
@@ -50,7 +50,7 @@ class EmbeddingModel(SingletonMeta):
         self, input_text: str | list[str], to_list: bool = True
     ) -> NDArray[np.float32] | list[float] | list[list[float]]:
         try:
-            embeddings = self._model.encode(input_text)
+            embeddings = self._model.encode(input_text, show_progress_bar=False)
         except Exception:
             return [] if to_list else np.array([])
 
