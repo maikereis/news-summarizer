@@ -3,7 +3,7 @@ from typing import List
 
 import typer
 import yaml
-from pipelines import crawl, drop_duplicates, remove_garbage, scrap
+from pipelines import crawl, drop_duplicates, index_data, remove_garbage, scrap
 
 app = typer.Typer()
 
@@ -37,6 +37,11 @@ def scrap_links():
 @app.command()
 def deduplicate_articles():
     drop_duplicates()
+
+
+@app.command()
+def index_articles():
+    index_data()
 
 
 if __name__ == "__main__":
