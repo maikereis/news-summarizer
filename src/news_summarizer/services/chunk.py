@@ -28,18 +28,48 @@ class ChunkingService:
             token_chunk_overlap (int): Overlap between token chunks.
             token_model_name (str): Name of the model for token-based splitting.
         """
+
+        self._separators = separators
+        self._character_chunk_size = character_chunk_size
+        self._character_chunk_overlap = character_chunk_overlap
+        self._token_chunk_size = token_chunk_size
+        self._token_chunk_overlap = token_chunk_overlap
+        self._token_model_name = token_model_name
+
         self.character_splitter = RecursiveCharacterTextSplitter(
-            separators=separators,
-            chunk_size=character_chunk_size,
-            chunk_overlap=character_chunk_overlap,
+            separators=self._separators,
+            chunk_size=self._character_chunk_size,
+            chunk_overlap=self._character_chunk_overlap,
         )
         self.token_splitter = SentenceTransformersTokenTextSplitter(
-            chunk_overlap=token_chunk_overlap,
-            tokens_per_chunk=token_chunk_size,
-            model_name=token_model_name,
+            chunk_overlap=self._token_chunk_overlap,
+            tokens_per_chunk=self._token_chunk_size,
+            model_name=self._token_model_name,
         )
-        self.character_chunk_size = character_chunk_size
-        self.token_chunk_overlap = token_chunk_overlap
+
+    @property
+    def separators(self):
+        return self._separators
+
+    @property
+    def character_chunk_size(self):
+        return self._character_chunk_size
+
+    @property
+    def character_chunk_overlap(self):
+        return self._character_chunk_overlap
+
+    @property
+    def token_chunk_size(self):
+        return self._token_chunk_size
+
+    @property
+    def token_chunk_overlap(self):
+        return self._token_chunk_overlap
+
+    @property
+    def token_model_name(self):
+        return self._token_model_name
 
     def split_text_into_chunks(self, text: str) -> List[str]:
         """

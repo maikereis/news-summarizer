@@ -63,11 +63,20 @@ def vectorize(
     metadata = {
         "num_documents": len(cleaned_documents),
         "chunking": {
+            "chunking_token_model_name": chunking_service.token_model_name,
+            "chunking_separators": chunking_service.separators,
+            "chunking_character_chunk_size": chunking_service.character_chunk_size,
+            "chunking_character_chunk_overlap": chunking_service.character_chunk_overlap,
+            "chunking_token_chunk_size": chunking_service.token_chunk_size,
+            "chunking_token_chunk_overlap": chunking_service.token_chunk_overlap,
             "success_count": chunking_success_count,
             "failure_count": chunking_failure_count,
             "status": "success" if chunking_failure_count == 0 else "partial_success",
         },
         "embedding": {
+            "embedding_model_id": embedder.model_id,
+            "embedding_zize": embedder.embedding_size,
+            "embedding_max_input_size": embedder.max_input_length,
             "success_count": embedding_success_count,
             "failure_count": embedding_failure_count,
             "status": "success" if embedding_failure_count == 0 else "partial_success",
