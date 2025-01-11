@@ -1,10 +1,12 @@
 import datetime
 import logging
+import warnings
 
 from bs4 import BeautifulSoup
 
 from news_summarizer.domain.documents import Article
 from news_summarizer.scraper.base import BaseSeleniumScraper
+from news_summarizer.utils import clean_html
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +19,7 @@ class G1Scraper(BaseSeleniumScraper):
 
     def extract(self, article_link: str, **kwargs) -> None:
         try:
+            logger.info("Start scraping link: %s.", article_link)
             self.driver.get(article_link)
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             self.soup = BeautifulSoup(self.driver.page_source, "html.parser")
@@ -42,8 +45,13 @@ class G1Scraper(BaseSeleniumScraper):
 
         except Exception as e:
             logger.error("Error while scraping link %s: %s", article_link, e)
+            raise
+
         finally:
-            self.driver.close()
+            try:
+                self.driver.close()
+            except Exception as close_error:
+                logger.warning("Error closing the driver: %s", close_error)
 
     def _extract_title(self, soup: BeautifulSoup):
         try:
@@ -95,6 +103,7 @@ class R7Scraper(BaseSeleniumScraper):
 
     def extract(self, article_link: str, **kwargs) -> None:
         try:
+            logger.info("Start scraping link: %s.", article_link)
             self.driver.get(article_link)
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             self.soup = BeautifulSoup(self.driver.page_source, "html.parser")
@@ -120,8 +129,13 @@ class R7Scraper(BaseSeleniumScraper):
 
         except Exception as e:
             logger.error("Error while scraping link %s: %s", article_link, e)
+            raise
+
         finally:
-            self.driver.close()
+            try:
+                self.driver.close()
+            except Exception as close_error:
+                logger.warning("Error closing the driver: %s", close_error)
 
     def _extract_title(self, soup: BeautifulSoup):
         try:
@@ -187,6 +201,7 @@ class BandScraper(BaseSeleniumScraper):
 
     def extract(self, article_link: str, **kwargs) -> None:
         try:
+            logger.info("Start scraping link: %s.", article_link)
             self.driver.get(article_link)
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             self.soup = BeautifulSoup(self.driver.page_source, "html.parser")
@@ -212,8 +227,13 @@ class BandScraper(BaseSeleniumScraper):
 
         except Exception as e:
             logger.error("Error while scraping link %s: %s", article_link, e)
+            raise
+
         finally:
-            self.driver.close()
+            try:
+                self.driver.close()
+            except Exception as close_error:
+                logger.warning("Error closing the driver: %s", close_error)
 
     def _extract_title(self, soup: BeautifulSoup):
         try:
@@ -287,6 +307,190 @@ class BandScraper(BaseSeleniumScraper):
             date_string = self._translate_months(date_string)
             date_format = "%B %d, %Y"
             publication_date = datetime.datetime.strptime(date_string, date_format)
+        except AttributeError as at:
+            logger.error("Error trying to extract publication date, %s", at)
+            return None
+        return publication_date
+
+
+class BBCBrasilScraper(BaseSeleniumScraper):
+    model = Article
+
+    def __init__(self) -> None:
+        warnings.warn(
+            "BBCBrasilScraper is experimental and may change in the future.", category=UserWarning, stacklevel=2
+        )
+        super().__init__()
+
+    def extract(self, article_link: str, **kwargs) -> None:
+        try:
+            logger.info("Start scraping link: %s.", article_link)
+            self.driver.get(article_link)
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            self.soup = BeautifulSoup(self.driver.page_source, "html.parser")
+            self.soup = clean_html(self.soup)
+
+            if not self.soup or not len(self.soup):
+                raise ValueError(f"No elements scraped from link {article_link}")
+
+            title = self._extract_title(self.soup)
+            author = self._extract_author(self.soup)
+            subtitle = self._extract_subtitle(self.soup)
+            content = self._extract_content(self.soup)
+            publication_date = self._extract_publication_date(self.soup)
+
+            instance = self.model(
+                title=title,
+                subtitle=subtitle,
+                author=author,
+                content=content,
+                publication_date=publication_date,
+                url=article_link,
+            )
+            return instance
+
+        except Exception as e:
+            logger.error("Error while scraping link %s: %s", article_link, e)
+            raise
+
+        finally:
+            try:
+                self.driver.close()
+            except Exception as close_error:
+                logger.warning("Error closing the driver: %s", close_error)
+
+    def _extract_title(self, soup: BeautifulSoup):
+        try:
+            return soup.find("h1", class_="bbc-14gqcmb e1p3vdyi0").text
+        except AttributeError as e:
+            logger.error("Error extracting title: %s", e)
+            raise ValueError("Title not found") from e
+
+    def _extract_author(self, soup: BeautifulSoup):
+        try:
+            return soup.find("span", class_="bbc-1ypcc2").text
+        except AttributeError:
+            logger.warning("Author not found")
+            return None
+
+    def _extract_subtitle(self, soup: BeautifulSoup):
+        try:
+            return soup.find("span", attrs={"data-testid": "caption-paragraph"}).text
+        except AttributeError:
+            logger.warning("Subtitle not found")
+            return None
+
+    def _extract_content(self, soup: BeautifulSoup):
+        try:
+            paragraphs = soup.find_all("div", class_="bbc-19j92fr ebmt73l0")
+            return "\n".join(p.get_text(separator=" ", strip=True) for p in paragraphs)
+        except AttributeError as e:
+            logger.error("Error extracting content: %s", e)
+            raise ValueError("Content not found") from e
+
+    def _extract_publication_date(self, soup: BeautifulSoup):
+        try:
+            return soup.find("time", class_="bbc-1dafq0j e1mklfmt0")["datetime"]
+        except (AttributeError, TypeError):
+            logger.warning("Publication date not found")
+            return None
+
+
+class CNNBrasilScraper(BaseSeleniumScraper):
+    model = Article
+
+    def __init__(self) -> None:
+        warnings.warn(
+            "CNNBrasilScraper is experimental and may change in the future.", category=UserWarning, stacklevel=2
+        )
+        super().__init__()
+
+    def extract(self, article_link: str, **kwargs) -> None:
+        try:
+            logger.info("Start scraping link: %s.", article_link)
+            self.driver.get(article_link)
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            self.soup = BeautifulSoup(self.driver.page_source, "html.parser")
+
+            if not self.soup or not len(self.soup):
+                raise ValueError(f"No elements scraped from link {article_link}")
+
+            title = self._extract_title(self.soup)
+            author = self._extract_author(self.soup)
+            subtitle = self._extract_subtitle(self.soup)
+            content = self._extract_content(self.soup)
+            publication_date = self._extract_publication_date(self.soup)
+
+            instance = self.model(
+                title=title,
+                subtitle=subtitle,
+                author=author,
+                content=content,
+                publication_date=publication_date,
+                url=article_link,
+            )
+
+            return instance
+
+        except Exception as e:
+            logger.error("Error while scraping link %s: %s", article_link, e)
+            raise
+
+        finally:
+            try:
+                self.driver.close()
+            except Exception as close_error:
+                logger.warning("Error closing the driver: %s", close_error)
+
+    def _extract_title(self, soup: BeautifulSoup):
+        try:
+            title = soup.find("h1", class_="single-header__title").text
+        except AttributeError as at:
+            logger.error("Error trying to extract title, %s", at)
+            raise ValueError("Error trying to extract title") from at
+        return title
+
+    def _extract_author(self, soup: BeautifulSoup):
+        try:
+            author_element = soup.find("span", class_="author__group")
+            author = author_element.find("a").text
+        except AttributeError as at:
+            logger.error("Error trying to extract author, %s", at)
+            return None
+        return author
+
+    def _extract_subtitle(self, soup: BeautifulSoup):
+        try:
+            subtitle = soup.find("p", class_="single-header__excerpt").text
+        except AttributeError as at:
+            logger.error("Error trying to extract subtitle, %s", at)
+            return None
+        return subtitle
+
+    def _extract_content(self, soup: BeautifulSoup):
+        try:
+            paragraphs = soup.select("div.single-content p")
+            content = "\n".join([p.text for p in paragraphs if len(p) > 0])
+        except AttributeError as at:
+            logger.error("Error trying to extract content, %s", at)
+            raise ValueError("Error trying to extract content") from at
+        return content
+
+    def _extract_publication_date(self, soup: BeautifulSoup):
+        try:
+            time_element = soup.find("time", class_="single-header__time")
+            time_text = time_element.text.strip()
+
+            # Check if "Atualizado" is present in the text
+            if "Atualizado" in time_text:
+                date_text = time_text.split("|")[1].strip().replace("Atualizado ", "")
+            else:
+                date_text = time_text.split("|")[0].strip()
+
+            # Convert the date text to a datetime object
+            date_format = "%d/%m/%Y às %H:%M"
+            publication_date = datetime.strptime(date_text, date_format)
+
         except AttributeError as at:
             logger.error("Error trying to extract publication date, %s", at)
             return None

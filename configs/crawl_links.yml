@@ -1,5 +1,75 @@
 parameters:
   links:
-    - https://g1.globo.com/
-    - https://bandnewstv.uol.com.br/
-    - https://www.r7.com/
+     G1
+    - https://g1.globo.com/politica/
+    - https://g1.globo.com/economia/
+    - https://g1.globo.com/ciencia/
+    - https://g1.globo.com/tecnologia/
+    - https://g1.globo.com/saude/
+    - https://g1.globo.com/mundo/
+    - https://g1.globo.com/pop-arte/
+    - https://g1.globo.com/natureza/
+    - https://g1.globo.com/educacao/
+    - https://g1.globo.com/carros/
+    - https://g1.globo.com/turismo-e-viagem/
+    - https://g1.globo.com/economia/agronegocios/
+    - https://g1.globo.com/economia/empreendedorismo/
+    - https://g1.globo.com/fato-ou-fake/
+    - https://g1.globo.com/guia-de-compras/
+    - https://g1.globo.com/economia/tecnologia/inovacao/
+    - https://g1.globo.com/loterias/
+    - https://g1.globo.com/economia/trabalho-e-carreira/
+    - https://g1.globo.com/carnaval/
+     CNN
+    - https://www.cnnbrasil.com.br/politica/
+    - https://www.cnnbrasil.com.br/internacional/
+    - https://www.cnnbrasil.com.br/nacional/
+    - https://www.cnnbrasil.com.br/economia/
+    - https://www.cnnbrasil.com.br/economia/money/
+    - https://www.cnnbrasil.com.br/pop/
+    - https://www.cnnbrasil.com.br/saude/
+    - https://www.cnnbrasil.com.br/esportes/
+    - https://www.cnnbrasil.com.br/tecnologia/
+    - https://www.cnnbrasil.com.br/lifestyle/
+    - https://www.cnnbrasil.com.br/viagem-gastronomia/
+    - https://www.cnnbrasil.com.br/auto/
+    - https://www.cnnbrasil.com.br/educacao/
+    - https://www.cnnbrasil.com.br/cnn-talks/
+    - https://www.cnnbrasil.com.br/opiniao/
+    - https://www.cnnbrasil.com.br/blogs/
+    - https://www.cnnbrasil.com.br/colunas/
+    # Band
+    - https://bandnewstv.uol.com.br/category/geral/
+    - https://bandnewstv.uol.com.br/category/mundo-2/
+    - https://bandnewstv.uol.com.br/category/politica/
+    - https://bandnewstv.uol.com.br/category/justica/
+    - https://bandnewstv.uol.com.br/category/economia/
+    - https://bandnewstv.uol.com.br/category/esportes/
+    - https://bandnewstv.uol.com.br/category/saude/
+    - https://bandnewstv.uol.com.br/category/agronegocio/
+    - https://bandnewstv.uol.com.br/category/cultura/
+    - https://bandnewstv.uol.com.br/category/educacao/
+    # R7
+    - https://noticias.r7.com/brasil/
+    - https://noticias.r7.com/brasilia/
+    - https://noticias.r7.com/internacional/
+    - https://noticias.r7.com/saude/
+    - https://noticias.r7.com/politica/
+    - https://noticias.r7.com/economia/
+    - https://noticias.r7.com/esportes/
+    - https://noticias.r7.com/entretenimento/
+    - https://noticias.r7.com/tecnologia-e-ciencia/
+    - https://noticias.r7.com/educacao/
+    - https://noticias.r7.com/cidades/
+    - https://noticias.r7.com/direito-do-consumidor/
+    - https://noticias.r7.com/renda-extra/
+    - https://noticias.r7.com/monitor7/
+    - https://noticias.r7.com/record-news/
+    - https://noticias.r7.com/jr-24h/
+    ## BBC
+    - https://www.bbc.com/portuguese/topics/cz74k717pw5t #Brasil
+    - https://www.bbc.com/portuguese/topics/cmdm4ynm24kt #Internacional
+    - https://www.bbc.com/portuguese/topics/cvjp2jr0k9rt #Economia
+    - https://www.bbc.com/portuguese/topics/c340q430z4vt #Saude
+    - https://www.bbc.com/portuguese/topics/cr50y580rjxt #Ciencia
+    - https://www.bbc.com/portuguese/topics/c404v027pd4t #Tecnologia
