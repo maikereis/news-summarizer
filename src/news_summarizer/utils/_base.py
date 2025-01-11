@@ -14,3 +14,10 @@ def device_selector() -> str:
 
 def batch_size_selector():
     pass
+
+
+def clean_html(soup):
+    # Remove style and script elements
+    for tag in soup(["style", "script"]):
+        tag.decompose()
+    return soup
