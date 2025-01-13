@@ -1,3 +1,4 @@
+import time
 from typing import Generator
 
 import torch
@@ -21,3 +22,15 @@ def clean_html(soup):
     for tag in soup(["style", "script"]):
         tag.decompose()
     return soup
+
+
+class RateCalculator:
+    def __init__(self) -> None:
+        self._start_time = None
+        self._counter = None
+
+    def _calculate_rate(self):
+        current_time = time.time()
+        duration = current_time - self._start_time  # Calculate the duration in seconds
+        rate = self._counter / (duration / 60)  # Calculate the rate (task per minute)
+        return rate
