@@ -1,4 +1,4 @@
-from .nosql import NoSQLBaseLink
+from .nosql import NoSQLBaseDocument
 from .vector import VectorBaseDocument
 
-__all__ = ["NoSQLBaseLink", "VectorBaseDocument"]
+__all__ = ["NoSQLBaseDocument", "VectorBaseDocument"]

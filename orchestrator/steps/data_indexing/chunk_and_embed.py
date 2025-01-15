@@ -41,30 +41,29 @@ def vectorize(
     for document in cleaned_documents:
         try:
             chunks = chunking_service.chunk(document)
+            chunking_success_count += 1
         except Exception:
             logger.error("Error trying to chunk document %s from %s", document.id, document.url)
             chunking_failure_count += 1
             continue
 
         try:
-            for batched_chunks in batch(chunks, 10):
+            for batched_chunks in batch(chunks, 50):
                 try:
                     batched_embedded_chunks = embedder_service.embed(batched_chunks)
                     embedded_chunks.extend(batched_embedded_chunks)
-                    embedding_success_count += 1
+                    embedding_success_count += 50
                 except Exception:
                     logger.error("Error trying to embed document chunks.")
-                    embedding_failure_count += 1
+                    embedding_failure_count += 50
         except Exception:
             logger.error("Error trying to iterate over chunks.")
-            embedding_failure_count += 1
-        chunking_success_count += 1
+            embedding_failure_count += 50
 
     metadata = {
-        "num_documents": len(cleaned_documents),
         "chunking": {
             "chunking_token_model_name": chunking_service.token_model_name,
-            "chunking_separators": chunking_service.separators,
+            "chunking_separators": repr(chunking_service.separators),
             "chunking_character_chunk_size": chunking_service.character_chunk_size,
             "chunking_character_chunk_overlap": chunking_service.character_chunk_overlap,
             "chunking_token_chunk_size": chunking_service.token_chunk_size,

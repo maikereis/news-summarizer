@@ -51,6 +51,12 @@ class RAGSettings(BaseSettings):
     model_device: str = Field("cpu", json_schema_extra={"env": "MODEL_DEVICE"})
 
 
+class DatasetGeneratorSettings(BaseSettings):
+    model_config = SettingsConfigDict(env=".env", env_prefix="DATASET_", protected_namespaces=("settings_",))
+    generator_model_id: str = Field(None, json_schema_extra={"env": "GENERATOR_MODEL_ID"})
+    generator_device: str = Field("cpu", json_schema_extra={"env": "GENERATOR_DEVICE"})
+
+
 class Settings:
     def __init__(self):
         self.openai = OpenAISettings()
@@ -59,6 +65,7 @@ class Settings:
         self.aws = AWSSettings()
         self.qdrant = QdrantSettings()
         self.rag = RAGSettings()
+        self.dataset = DatasetGeneratorSettings()
 
     @classmethod
     def load_settings(cls) -> "Settings":

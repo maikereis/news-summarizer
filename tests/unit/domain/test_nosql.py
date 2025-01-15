@@ -1,7 +1,7 @@
 import uuid
 
 import pytest
-from news_summarizer.domain.base.nosql import NoSQLBaseLink
+from news_summarizer.domain.base.nosql import NoSQLBaseDocument
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def mock_database(monkeypatch):
 
 
 # Example subclass of NoSQLBaseLink for testing
-class DomainLink(NoSQLBaseLink):
+class DomainLink(NoSQLBaseDocument):
     name: str
     url: str
 

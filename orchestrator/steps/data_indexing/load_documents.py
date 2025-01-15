@@ -9,11 +9,9 @@ logger = logging.getLogger(__name__)
 
 @step
 def load() -> Annotated[list, "raw_documents"]:
-    articles = fetch_all_articles()
+    articles = _fetch_all_articles()
 
-    num_articles = len(articles)
-
-    metadata = {"num_articles": num_articles}
+    metadata = {"loaded_documents": {"num_documents": len(articles)}}
 
     context = get_step_context()
     context.add_output_metadata(output_name="raw_documents", metadata=metadata)
@@ -21,5 +19,5 @@ def load() -> Annotated[list, "raw_documents"]:
     return articles
 
 
-def fetch_all_articles():
+def _fetch_all_articles():
     return Article.bulk_find(**{})

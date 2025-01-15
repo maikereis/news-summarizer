@@ -1,6 +1,6 @@
 parameters:
   links:
-     G1
+    # G1
     - https://g1.globo.com/politica/
     - https://g1.globo.com/economia/
     - https://g1.globo.com/ciencia/

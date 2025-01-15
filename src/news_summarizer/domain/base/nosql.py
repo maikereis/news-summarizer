@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 _database = connection.get_database(settings.mongo.name)
 
-T = TypeVar("T", bound="NoSQLBaseLink")
+T = TypeVar("T", bound="NoSQLBaseDocument")
 
 
-class NoSQLBaseLink(BaseModel, Generic[T], ABC):
+class NoSQLBaseDocument(BaseModel, Generic[T], ABC):
     id: UUID4 = Field(default_factory=uuid.uuid4)
 
     def __eq__(self, value: object) -> bool:
