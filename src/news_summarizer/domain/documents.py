@@ -3,10 +3,10 @@ from typing import Optional
 
 from pydantic import AnyUrl, Field, field_serializer
 
-from .base import NoSQLBaseLink
+from .base import NoSQLBaseDocument
 
 
-class Link(NoSQLBaseLink):
+class Link(NoSQLBaseDocument):
     title: str = Field(..., description="The title of the link")
     url: AnyUrl = Field(description="The URL of the link")
     source: Optional[str] = Field(None, description="The source of the link")
@@ -24,7 +24,7 @@ class Link(NoSQLBaseLink):
         name = "link"
 
 
-class Article(NoSQLBaseLink):
+class Article(NoSQLBaseDocument):
     title: str = Field(..., description="The title of the link")
     subtitle: Optional[str] = Field(..., description="The subtitle of the link")
     author: Optional[str] = Field(..., description="The author")

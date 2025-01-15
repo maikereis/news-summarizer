@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 
-from news_summarizer.domain.base import NoSQLBaseLink
+from news_summarizer.domain.base import NoSQLBaseDocument
 from news_summarizer.webdriver import ShutilBrowserLocator, WebDriverFactory
 
 
 class BaseCrawler(ABC):
-    model: type[NoSQLBaseLink]
+    model: type[NoSQLBaseDocument]
 
     @abstractmethod
     def search(self, link: str, **kwargs) -> None:

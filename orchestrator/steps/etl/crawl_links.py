@@ -3,7 +3,7 @@ import time
 from datetime import timedelta
 from typing import Dict
 
-from news_summarizer.crawler import CrawlerExecutor, crawler_registry
+from news_summarizer.web import CrawlerExecutor, crawler_registry
 from typing_extensions import Annotated
 from zenml import get_step_context, step
 

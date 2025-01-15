@@ -39,10 +39,11 @@ def clean(
             continue
 
     metadata = {
-        "num_documents": len(documents),
-        "success_count": success_count,
-        "failure_count": failure_count,
-        "status": "success" if failure_count == 0 else "partial_success",
+        "cleaned_documents": {
+            "success_count": success_count,
+            "failure_count": failure_count,
+            "status": "success" if failure_count == 0 else "partial_success",
+        }
     }
 
     step_context = get_step_context()

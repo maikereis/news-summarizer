@@ -3,7 +3,7 @@ import logging
 from news_summarizer.config import settings
 from news_summarizer.database.mongo import MongoDatabaseConnector
 from news_summarizer.domain.documents import Link
-from zenml import get_step_context, step
+from zenml import step
 
 logger = logging.getLogger(__name__)
 
@@ -12,52 +12,40 @@ database = client.get_database(settings.mongo.name)
 
 
 @step
-def remove_unrelated_links():
+def drop_duplicated_links():
     collection = database[Link.get_collection_name()]
-    unrelated = _search_unrelated_links(collection)
-    success_count, failure_count = _drop_unrelated_links(collection, unrelated)
 
-    # Organize metadata
-    metadata = {
-        "total_unrelated_links": success_count + failure_count,
-        "success_count": success_count,
-        "failure_count": failure_count,
-        "status": "success" if failure_count == 0 else "partial_success",
-    }
-
-    context = get_step_context()
-    context.add_output_metadata(output_name="output", metadata=metadata)
-
-    return metadata
+    duplicates = _search_duplicates(collection, group_by="url")
+    status = _drop_duplicates(collection, duplicates, sort_key="extracted_at")
+    return status
 
 
-def _search_unrelated_links(collection):
-    filter_query = {
-        "$or": [
-            {"url": {"$not": {"$regex": "noticia|news|noticias", "$options": "i"}}},
-            {"url": {"$not": {"$regex": ".*-.*-.*-.*-.*-.*"}}},
-            {"url": {"$regex": "^.{0,99}$"}},
-            {"url": {"$regex": "/video/"}},
-        ]
-    }
-
-    cursor = collection.find(filter_query)
-    for unrelated_group in cursor:
-        yield unrelated_group
+def _search_duplicates(collection, group_by=None):
+    pipeline = [
+        {"$group": {"_id": f"${group_by}", "count": {"$sum": 1}, "ids": {"$push": "$_id"}}},
+        {"$match": {"count": {"$gt": 1}}},
+    ]
+    cursor = collection.aggregate(pipeline, allowDiskUse=True)
+    for duplicate_group in cursor:
+        yield duplicate_group
 
 
-def _drop_unrelated_links(collection, unrelated):
-    success_count = 0
-    failure_count = 0
+def _drop_duplicates(collection, duplicates_iterator, sort_key=None, descending=True):
     try:
-        for document in unrelated:
-            try:
-                collection.delete_one({"_id": document["_id"]})
-                success_count += 1
-            except Exception as exc:
-                logger.error("Error trying to remove document %s: %s", document["_id"], exc)
-                failure_count += 1
+        for duplicate in duplicates_iterator:
+            ids = duplicate["ids"]
+
+            docs = list(collection.find({"_id": {"$in": ids}}))
+            if not docs:
+                logger.info("No documents found for IDs: %s", ids)
+                continue
+
+            ids_to_remove = [doc["_id"] for doc in docs[1:]]
+
+            result = collection.delete_many({"_id": {"$in": ids_to_remove}})
+
+            logger.info("Result: %s", result)
+        return True
     except Exception as exc:
-        logger.error("Error processing unrelated links: %s", exc)
-        failure_count += 1
-    return success_count, failure_count
+        logger.error("Error trying drop duplicated articles: %s", exc)
+        return False

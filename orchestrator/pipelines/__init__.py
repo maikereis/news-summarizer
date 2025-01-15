@@ -1,7 +1,6 @@
-from .article_cleaner import drop_duplicates
-from .article_scrap import scrap
+from .data_fetching import crawl
 from .data_indexing import index_data
-from .links_cleaner import remove_garbage
-from .links_crawl import crawl
+from .data_ingestion import scrap
+from .generate_dataset import generate
 
-__all__ = ["crawl", "remove_garbage", "scrap", "drop_duplicates", "index_data"]
+__all__ = ["crawl", "scrap", "index_data", "generate"]

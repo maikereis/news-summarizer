@@ -11,13 +11,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from news_summarizer.crawler.base import BaseSeleniumCrawler
 from news_summarizer.domain.documents import Link
 from news_summarizer.utils import clean_html
 
-logging.basicConfig(level=logging.debug)
+from .base import BaseSeleniumCrawler
 
+logging.basicConfig(level=logging.debug)
 logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 5
+MAX_REPEATED_PAGE_COUNT = 10
+TIMEOUT = 300
 
 
 def extract_date_from_url(url: str) -> str:
@@ -89,20 +93,25 @@ class G1Crawler(BaseSeleniumCrawler):
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self) -> None:
-        logger.info("Start scrolling page.")
+        logger.debug("Start scrolling page.")
 
         load_more = 0
         page_number = 0
         last_page_number = 0
         repeated_page_count = 0
+        retry_count = 0
 
-        timeout_duration = 600  # 10 minutes # Record the start time start_time = time.time()
+        timeout_duration = TIMEOUT  # 10 minutes # Record the start time start_time = time.time()
         start_time = time.time()
 
         while True:
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout_duration:
-                logger.info("Timeout reached. Stopping the crawl.")
+                logger.debug("Timeout reached. Stopping the crawl.")
+                break
+
+            if retry_count > MAX_RETRIES:
+                logger.debug("Max retries reached.")
                 break
 
             try:
@@ -129,7 +138,7 @@ class G1Crawler(BaseSeleniumCrawler):
                     page_number,
                     int,
                 ):
-                    logger.info("Invalid page number.")
+                    logger.debug("Invalid page number.")
                     continue
 
                 logger.debug("Current page number: %s", page_number)
@@ -141,13 +150,13 @@ class G1Crawler(BaseSeleniumCrawler):
                 else:
                     repeated_page_count = 0
 
-                if repeated_page_count > 20:
-                    logger.info("Skipping, seeing the same page for %s iteractions.", repeated_page_count)
+                if repeated_page_count > MAX_REPEATED_PAGE_COUNT:
+                    logger.debug("Skipping, seeing the same page for %s iteractions.", repeated_page_count)
                     break
 
                 ## Break if the maximum number of scrolls is reached.
                 if page_number > last_page_number:
-                    logger.info("New content loaded.")
+                    logger.debug("New content loaded.")
                     load_more += 1
                     last_page_number = page_number
                     if load_more >= self.scroll_limit:
@@ -159,6 +168,7 @@ class G1Crawler(BaseSeleniumCrawler):
                 time.sleep(1)
 
             except TimeoutException:
+                retry_count += 1
                 logger.error("Timeout.")
                 continue
 
@@ -166,7 +176,7 @@ class G1Crawler(BaseSeleniumCrawler):
         match = re.search(r"pagina-(\d+)", url)
         page_number = int(match.group(1))
 
-        if isinstance(int, page_number):
+        if isinstance(page_number, int):
             return page_number
         return None
 
@@ -179,7 +189,7 @@ class G1Crawler(BaseSeleniumCrawler):
 
     def search(self, link: str, **kwargs) -> None:
         try:
-            logger.info("Crawling link: %s", link)
+            logger.debug("Crawling link: %s", link)
             self.driver.get(link)
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "footer")))
             time.sleep(2)
@@ -204,12 +214,11 @@ class G1Crawler(BaseSeleniumCrawler):
                             published_at=hyperlink["published_at"],
                         )
                     )
-                except ValueError as ve:
+                except ValueError:
                     logger.error(
-                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        "Failed to append hyperlink with title '%s' and URL '%s'",
                         hyperlink.get("title", "N/A"),
                         hyperlink.get("url", "N/A"),
-                        ve,
                     )
                     continue
 
@@ -227,7 +236,7 @@ class BandCrawler(BaseSeleniumCrawler):
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self) -> None:
-        logger.info("Start scrolling page.")
+        logger.debug("Start scrolling page.")
 
         load_more = 0
         page_number = 0
@@ -235,17 +244,17 @@ class BandCrawler(BaseSeleniumCrawler):
         repeated_page_count = 0
         retry_count = 0
 
-        timeout_duration = 600  # 10 minutes # Record the start time start_time = time.time()
+        timeout_duration = TIMEOUT  # 10 minutes # Record the start time start_time = time.time()
         start_time = time.time()
 
         while True:
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout_duration:
-                logger.info("Timeout reached. Stopping the crawl.")
+                logger.debug("Timeout reached. Stopping the crawl.")
                 break
 
-            if retry_count > 5:
-                logger.info("Max retries reached.")
+            if retry_count > MAX_RETRIES:
+                logger.debug("Max retries reached.")
                 break
 
             try:
@@ -270,7 +279,7 @@ class BandCrawler(BaseSeleniumCrawler):
                     page_number,
                     int,
                 ):
-                    logger.info("Invalid page number.")
+                    logger.debug("Invalid page number.")
                     continue
 
                 logger.debug("Current page number: %s", page_number)
@@ -281,13 +290,13 @@ class BandCrawler(BaseSeleniumCrawler):
                 else:
                     repeated_page_count = 0
 
-                if repeated_page_count > 20:
-                    logger.info("Skipping, seeing the same page for %s iteractions.", repeated_page_count)
+                if repeated_page_count > MAX_REPEATED_PAGE_COUNT:
+                    logger.debug("Skipping, seeing the same page for %s iteractions.", repeated_page_count)
                     break
 
                 ## Break if the maximum number of scrolls is reached.
                 if page_number > last_page_number:
-                    logger.info("New content loaded.")
+                    logger.debug("New content loaded.")
                     load_more += 1
                     last_page_number = page_number
                     if load_more >= self.scroll_limit:
@@ -309,7 +318,7 @@ class BandCrawler(BaseSeleniumCrawler):
 
     def search(self, link: str, **kwargs) -> None:
         try:
-            logger.info("Crawling link: %s", link)
+            logger.debug("Crawling link: %s", link)
             self.driver.get(link)
             time.sleep(5)
             self.scroll_page()
@@ -334,12 +343,11 @@ class BandCrawler(BaseSeleniumCrawler):
                             published_at=hyperlink["published_at"],
                         )
                     )
-                except ValueError as ve:
+                except ValueError:
                     logger.error(
-                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        "Failed to append hyperlink with title '%s' and URL '%s'",
                         hyperlink.get("title", "N/A"),
                         hyperlink.get("url", "N/A"),
-                        ve,
                     )
                     continue
 
@@ -357,16 +365,20 @@ class R7Crawler(BaseSeleniumCrawler):
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self) -> None:
-        logger.info("Start scrolling page.")
+        logger.debug("Start scrolling page.")
         last_height = self.driver.execute_script("return document.body.scrollHeight")
         load_more = 0
-        timeout_duration = 600  # 10 minutes # Record the start time start_time = time.time()
+        retry_count = 0
+        timeout_duration = TIMEOUT  # 10 minutes # Record the start time start_time = time.time()
         start_time = time.time()
 
         while True:
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout_duration:
-                logger.info("Timeout reached. Stopping the crawl.")
+                logger.debug("Timeout reached. Stopping the crawl.")
+
+            if retry_count > MAX_RETRIES:
+                logger.debug("Max retries reached.")
                 break
 
             try:
@@ -406,12 +418,13 @@ class R7Crawler(BaseSeleniumCrawler):
                 time.sleep(2)
 
             except TimeoutException:
+                retry_count += 1
                 logger.error("Timeout.")
                 continue
 
     def search(self, link: str, **kwargs) -> None:
         try:
-            logger.info("Crawling link: %s", link)
+            logger.debug("Crawling link: %s", link)
             self.driver.get(link)
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "footer")))
             time.sleep(2)
@@ -440,12 +453,11 @@ class R7Crawler(BaseSeleniumCrawler):
                             published_at=hyperlink["published_at"],
                         )
                     )
-                except ValueError as ve:
+                except ValueError:
                     logger.error(
-                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        "Failed to append hyperlink with title '%s' and URL '%s'",
                         hyperlink.get("title", "N/A"),
                         hyperlink.get("url", "N/A"),
-                        ve,
                     )
                     continue
 
@@ -470,23 +482,28 @@ class CNNBrasilCrawler(BaseSeleniumCrawler):
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self) -> None:
-        logger.info("Start scrolling page.")
+        logger.debug("Start scrolling page.")
         load_more = 0
         page_number = 0
         last_page_number = 0
         repeated_page_count = 0
+        retry_count = 0
 
-        timeout_duration = 600  # 10 minutes # Record the start time start_time = time.time()
+        timeout_duration = TIMEOUT  # 10 minutes # Record the start time start_time = time.time()
         start_time = time.time()
 
         while True:
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout_duration:
-                logger.info("Timeout reached. Stopping the crawl.")
+                logger.debug("Timeout reached. Stopping the crawl.")
+                break
+
+            if retry_count > MAX_RETRIES:
+                logger.debug("Max retries reached.")
                 break
 
             try:
-                logger.info("Scroll page down.")
+                logger.debug("Scroll page down.")
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 WebDriverWait(self.driver, 10).until(
                     lambda driver: driver.execute_script(
@@ -504,7 +521,7 @@ class CNNBrasilCrawler(BaseSeleniumCrawler):
                     page_number,
                     int,
                 ):
-                    logger.info("Invalid page number.")
+                    logger.debug("Invalid page number.")
                     continue
 
                 logger.debug("Current page number: %s", page_number)
@@ -516,22 +533,23 @@ class CNNBrasilCrawler(BaseSeleniumCrawler):
                 else:
                     repeated_page_count = 0
 
-                if repeated_page_count > 20:
-                    logger.info("Skipping, seeing the same page for %s iteractions.", repeated_page_count)
+                if repeated_page_count > MAX_REPEATED_PAGE_COUNT:
+                    logger.debug("Skipping, seeing the same page for %s iteractions.", repeated_page_count)
                     break
 
                 if page_number > last_page_number:
-                    logger.info("New content loaded.")
+                    logger.debug("New content loaded.")
                     load_more += 1
                     last_page_number = page_number
                     if load_more >= self.scroll_limit:
                         break
 
-                logger.info("Load more content")
+                logger.debug("Load more content")
                 self.driver.execute_script("arguments[0].click()", load_more_button)
                 time.sleep(1)
 
             except TimeoutException:
+                retry_count += 1
                 logger.error("Timeout.")
                 continue
 
@@ -543,7 +561,7 @@ class CNNBrasilCrawler(BaseSeleniumCrawler):
 
     def search(self, link: str, **kwargs) -> None:
         try:
-            logger.info("Crawling link: %s", link)
+            logger.debug("Crawling link: %s", link)
             self.driver.get(link)
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "footer")))
             self.scroll_page()
@@ -564,16 +582,15 @@ class CNNBrasilCrawler(BaseSeleniumCrawler):
                             published_at=hyperlink["published_at"],
                         )
                     )
-                except ValueError as ve:
+                except ValueError:
                     logger.error(
-                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        "Failed to append hyperlink with title '%s' and URL '%s'",
                         hyperlink.get("title", "N/A"),
                         hyperlink.get("url", "N/A"),
-                        ve,
                     )
                     continue
 
-            logger.info("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
+            logger.debug("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
             self.model.bulk_insert(hyperlink_list)
         except Exception as e:
             logger.error("Error while crawling domain %s: %s", link, e)
@@ -587,13 +604,13 @@ class BBCBrasilCrawler(BaseSeleniumCrawler):
         super().__init__(scroll_limit=scroll_limit)
 
     def scroll_page(self, tab_list: list) -> None:
-        logger.info("Start scrolling page.")
+        logger.debug("Start scrolling page.")
         load_more = 0
         page_number = 0
         retry_count = 0
         last_page_number = 0
 
-        timeout_duration = 600  # 10 minutes # Record the start time start_time = time.time()
+        timeout_duration = TIMEOUT  # 10 minutes # Record the start time start_time = time.time()
         start_time = time.time()
 
         while True:
@@ -602,8 +619,8 @@ class BBCBrasilCrawler(BaseSeleniumCrawler):
                 logger.debug("Timeout reached. Stopping the crawl.")
                 break
 
-            if retry_count > 2:
-                logger.info("Max retries reached.")
+            if retry_count > MAX_RETRIES:
+                logger.debug("Max retries reached.")
                 break
 
             try:
@@ -641,13 +658,13 @@ class BBCBrasilCrawler(BaseSeleniumCrawler):
                     page_number,
                     int,
                 ):
-                    logger.info("Invalid page number.")
+                    logger.debug("Invalid page number.")
                     continue
 
                 logger.debug("Page number: %s", page_number)
 
                 if page_number > last_page_number:
-                    logger.info("New content loaded.")
+                    logger.debug("New content loaded.")
                     load_more += 1
                     last_page_number = page_number
                     if load_more >= self.scroll_limit:
@@ -673,7 +690,7 @@ class BBCBrasilCrawler(BaseSeleniumCrawler):
 
     def search(self, link: str, **kwargs) -> None:
         try:
-            logger.info("Crawling link: %s", link)
+            logger.debug("Crawling link: %s", link)
             self.driver.get(link)
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "footer")))
 
@@ -704,12 +721,11 @@ class BBCBrasilCrawler(BaseSeleniumCrawler):
                             published_at=hyperlink["published_at"],
                         )
                     )
-                except ValueError as ve:
+                except ValueError:
                     logger.error(
-                        "Failed to append hyperlink with title '%s' and URL '%s'. Validation error: %s",
+                        "Failed to append hyperlink with title '%s' and URL '%s'",
                         hyperlink.get("title", "N/A"),
                         hyperlink.get("url", "N/A"),
-                        ve,
                     )
                     continue
 

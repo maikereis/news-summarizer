@@ -5,8 +5,9 @@ import warnings
 from bs4 import BeautifulSoup
 
 from news_summarizer.domain.documents import Article
-from news_summarizer.scraper.base import BaseSeleniumScraper
 from news_summarizer.utils import clean_html
+
+from .base import BaseSeleniumScraper
 
 logger = logging.getLogger(__name__)
 
