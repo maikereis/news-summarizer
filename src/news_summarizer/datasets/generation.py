@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from news_summarizer.config import settings
 from news_summarizer.domain.clean_documents import CleanedArticle
@@ -54,8 +55,9 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
 
         self._model = AutoModelForCausalLM.from_pretrained(
             self._model_id,
-            torch_dtype="auto",
+            torch_dtype=torch.float16,
             device_map=self._device,
+            max_memory={0: "8GB"},
             cache_dir=str(cache_dir) if cache_dir else None,
         )
         self._tokenizer = AutoTokenizer.from_pretrained(
@@ -64,7 +66,6 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
             padding_side="left",
         )
 
-        self._pipeline = pipeline(task, model=self._model, tokenizer=self._tokenizer)
         self._batch_size = batch_size
 
     @property
@@ -118,8 +119,10 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
         ]
         model_inputs = self._tokenizer(texts, return_tensors="pt", padding=True, truncation=True).to(self._model.device)
 
-        # Generate responses in batch
-        generated_ids = self._model.generate(**model_inputs, max_new_tokens=512)
+        with torch.no_grad():
+            # Generate responses in batch
+            generated_ids = self._model.generate(**model_inputs, max_new_tokens=512)
+
         input_lengths = [len(input_ids) for input_ids in model_inputs.input_ids]
 
         # Decode responses and remove input tokens
@@ -127,6 +130,8 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
             self._tokenizer.decode(output_ids[input_length:], skip_special_tokens=True)
             for output_ids, input_length in zip(generated_ids, input_lengths, strict=False)
         ]
+
+        torch.cuda.empty_cache()
 
         return responses
 
@@ -146,7 +151,7 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
             self._counter += self._batch_size
             rate = self._calculate_rate()
             logger.info("Current rate: %.2f prompts/minute", rate)
-        return responses
+        return articles, responses
 
     def _format_output(self, articles, responses):
         return [

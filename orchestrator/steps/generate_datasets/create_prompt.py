@@ -5,7 +5,7 @@ from zenml import get_step_context, step
 
 @step
 def get_prompts(documents: Annotated[list, "cleaned_documents"]) -> Annotated[list, "summarization_dataset"]:
-    generator = SummarizationDatasetGenerator()
+    generator = SummarizationDatasetGenerator(cache_dir="./.model_cache")
     dataset = generator.generate(documents)
 
     metadata = {
