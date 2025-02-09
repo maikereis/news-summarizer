@@ -490,7 +490,7 @@ class CNNBrasilScraper(BaseSeleniumScraper):
 
             # Convert the date text to a datetime object
             date_format = "%d/%m/%Y às %H:%M"
-            publication_date = datetime.strptime(date_text, date_format)
+            publication_date = datetime.datetime.strptime(date_text, date_format)
 
         except AttributeError as at:
             logger.error("Error trying to extract publication date, %s", at)
