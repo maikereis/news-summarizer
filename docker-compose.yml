@@ -24,9 +24,6 @@ services:
     ports:
       - ${QDRANT_REST_API_PORT}:6333
       - ${QDRANT_GRPC_API_PORT}:6334
-    #expose:
-    #  - 6333
-    #  - 6334
     volumes:
       - qdrant_data:/qdrant/storage
     networks:
@@ -50,9 +47,9 @@ services:
       - "8237:8080"
     environment:
       - ZENML_STORE_URL=mysql://root:password@host.docker.internal/zenml
-      - ZENML_DEFAULT_USER_NAME=username
-      - ZENML_DEFAULT_USER_PASSWORD=password
-
+      - ZENML_DEFAULT_USER_NAME=${ZENML_USER}
+      - ZENML_DEFAULT_USER_PASSWORD=${ZENML_PASSWORD}
+      - ZENML_SERVER_AUTO_ACTIVATE=1
     links:
       - mysql
     depends_on:
@@ -60,11 +57,16 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: on-failure
-
+    logging:
+      options:
+        max-size: 1g
+        
 volumes:
   mongo_data:
-  mysql_data:
+    external: true
   qdrant_data:
+    external: true
+  mysql_data:
 
 networks:
   local:
