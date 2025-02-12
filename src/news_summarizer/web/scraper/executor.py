@@ -23,6 +23,6 @@ class ScraperExecutor(BaseExecutor):
             scraper.extract(link)
             logger.debug("Finished scraping for link: %s", link)
             return True
-        except Exception as err:
-            logger.error("Error while scraping link: %s, %s", link, err)
+        except Exception as ex:
+            logger.error("Task failed: %s, %s", link, ex)
             return False

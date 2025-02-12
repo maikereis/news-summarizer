@@ -41,7 +41,7 @@ services:
       - mysql_data:/var/lib/mysql
 
   zenml:
-    image: zenmldocker/zenml-server
+    image: zenmldocker/zenml-server:0.74.0
     container_name: zenml_server
     ports:
       - "8237:8080"
@@ -60,7 +60,7 @@ services:
     logging:
       options:
         max-size: 1g
-        
+
 volumes:
   mongo_data:
     external: true

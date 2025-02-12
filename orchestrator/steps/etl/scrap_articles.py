@@ -38,13 +38,10 @@ def scrap_articles() -> Annotated[Dict[str, str], "scrapped_articles"]:
     return metadata
 
 
-def _get_not_scraped_links():
-    links = Link.bulk_find(**{})
-    links_urls = [str(link.url) for link in links]
+def _get_not_scraped_links(max_articles=2000):
+    links_urls = [str(link.url) for link in Link.bulk_find(**{})]
+    articles_urls = [str(link.url) for link in Article.bulk_find(**{})]
 
-    articles = Article.bulk_find(**{})
-    articles_urls = [str(link.url) for link in articles]
-
-    not_scraped_links = set(links_urls) - set(articles_urls)
+    not_scraped_links = list(set(links_urls) - set(articles_urls))[:max_articles]
 
     return not_scraped_links

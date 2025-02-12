@@ -20,7 +20,7 @@ parameters:
     - https://g1.globo.com/loterias/
     - https://g1.globo.com/economia/trabalho-e-carreira/
     - https://g1.globo.com/carnaval/
-     CNN
+    # CNN
     - https://www.cnnbrasil.com.br/politica/
     - https://www.cnnbrasil.com.br/internacional/
     - https://www.cnnbrasil.com.br/nacional/

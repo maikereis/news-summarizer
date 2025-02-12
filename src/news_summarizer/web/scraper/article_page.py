@@ -1,6 +1,5 @@
 import datetime
 import logging
-import warnings
 
 from bs4 import BeautifulSoup
 
@@ -318,9 +317,6 @@ class BBCBrasilScraper(BaseSeleniumScraper):
     model = Article
 
     def __init__(self) -> None:
-        warnings.warn(
-            "BBCBrasilScraper is experimental and may change in the future.", category=UserWarning, stacklevel=2
-        )
         super().__init__()
 
     def extract(self, article_link: str, **kwargs) -> None:
@@ -392,8 +388,8 @@ class BBCBrasilScraper(BaseSeleniumScraper):
     def _extract_publication_date(self, soup: BeautifulSoup):
         try:
             return soup.find("time", class_="bbc-1dafq0j e1mklfmt0")["datetime"]
-        except (AttributeError, TypeError):
-            logger.warning("Publication date not found")
+        except (AttributeError, TypeError) as at:
+            logger.warning("Can't extract publication date, %s", at)
             return None
 
 
@@ -401,9 +397,6 @@ class CNNBrasilScraper(BaseSeleniumScraper):
     model = Article
 
     def __init__(self) -> None:
-        warnings.warn(
-            "CNNBrasilScraper is experimental and may change in the future.", category=UserWarning, stacklevel=2
-        )
         super().__init__()
 
     def extract(self, article_link: str, **kwargs) -> None:
