@@ -22,8 +22,8 @@ class CrawlerExecutor(BaseExecutor):
             return False
         try:
             crawler.search(link)
-            logger.debug("Finished crawling for link: %s", link)
+            logger.debug("Task success: %s", link)
             return True
-        except Exception:
-            logger.error("Error while crawling link %s", link)
+        except Exception as ex:
+            logger.error("Task failed: %s, %s", link, err)
             return False
