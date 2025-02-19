@@ -2,6 +2,8 @@ import datetime
 import logging
 
 from bs4 import BeautifulSoup
+from selenium.common.exceptions import InvalidSessionIdException
+from urllib3 import HTTPConnectionPool
 
 from news_summarizer.domain.documents import Article
 from news_summarizer.utils import clean_html
@@ -32,7 +34,7 @@ class G1Scraper(BaseSeleniumScraper):
             content = self._extract_content(self.soup)
             publication_date = self._extract_publication_date(self.soup)
 
-            intance = self.model(
+            instance = self.model(
                 title=title,
                 subtitle=subtitle,
                 author=author,
@@ -41,12 +43,17 @@ class G1Scraper(BaseSeleniumScraper):
                 url=article_link,
             )
 
-            intance.save()
+            instance.save()
 
-        except Exception as e:
-            logger.error("Error while scraping link %s: %s", article_link, e)
-            raise
-
+        except ValueError as ve:
+            logger.error("Value error scraping link %s: %s", article_link, ve)
+        except InvalidSessionIdException as ise:
+            logger.error("Invalid session while scraping link %s: %s", article_link, ise)
+        except HTTPConnectionPool as hcp_ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except Exception as ex:
+            logger.error("Error while scraping link %s: %s", article_link, ex)
+            raise  # Re-raise if you want to propagate the original exception
         finally:
             try:
                 self.driver.close()
@@ -65,7 +72,7 @@ class G1Scraper(BaseSeleniumScraper):
         try:
             author = soup.find("a", class_="multi_signatures").text
         except AttributeError as at:
-            logger.error("Error trying to extract author, %s", at)
+            logger.warning("Can't extract author, %s", at)
             return None
         return author
 
@@ -73,7 +80,7 @@ class G1Scraper(BaseSeleniumScraper):
         try:
             subtitle = soup.find("h2", class_="content-head__subtitle").text
         except AttributeError as at:
-            logger.error("Error trying to extract subtitle, %s", at)
+            logger.warning("Can't extract subtitle, %s", at)
             return None
         return subtitle
 
@@ -90,7 +97,7 @@ class G1Scraper(BaseSeleniumScraper):
         try:
             publication_date = soup.find("time", itemprop="datePublished")["datetime"]
         except AttributeError as at:
-            logger.error("Error trying to extract publication date, %s", at)
+            logger.warning("Can't extract publication date, %s", at)
             return None
         return publication_date
 
@@ -116,7 +123,7 @@ class R7Scraper(BaseSeleniumScraper):
             content = self._extract_content(self.soup)
             publication_date = self._extract_publication_date(self.soup)
 
-            intance = self.model(
+            instance = self.model(
                 title=title,
                 subtitle=subtitle,
                 author=author,
@@ -124,13 +131,17 @@ class R7Scraper(BaseSeleniumScraper):
                 publication_date=publication_date,
                 url=article_link,
             )
+            instance.save()
 
-            intance.save()
-
-        except Exception as e:
-            logger.error("Error while scraping link %s: %s", article_link, e)
-            raise
-
+        except ValueError as ve:
+            logger.error("Value error scraping link %s: %s", article_link, ve)
+        except InvalidSessionIdException as ise:
+            logger.error("Invalid session while scraping link %s: %s", article_link, ise)
+        except HTTPConnectionPool as hcp_ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except Exception as ex:
+            logger.error("Error while scraping link %s: %s", article_link, ex)
+            raise  # Re-raise if you want to propagate the original exception
         finally:
             try:
                 self.driver.close()
@@ -167,7 +178,7 @@ class R7Scraper(BaseSeleniumScraper):
                 class_="base-font-primary dark:base-text-neutral-high-400 base-text-xxs base-font-bold base-leading-md sm:base-text-md sm:base-font-medium sm:base-leading-lg base-text-neutral-low-500",
             ).text
         except AttributeError as at:
-            logger.error("Error trying to extract subtitle, %s", at)
+            logger.warning("Can't extract subtitle, %s", at)
             return None
         return subtitle
 
@@ -188,8 +199,8 @@ class R7Scraper(BaseSeleniumScraper):
             if modified_date is None:
                 return publication_date
         except AttributeError as at:
-            logger.error("Error trying to extract publication date, %s", at)
-            raise ValueError("Error trying to extract publication date") from at
+            logger.warning("Can't extract publication date, %s", at)
+            return None
         return modified_date
 
 
@@ -214,7 +225,7 @@ class BandScraper(BaseSeleniumScraper):
             content = self._extract_content(self.soup)
             publication_date = self._extract_publication_date(self.soup)
 
-            intance = self.model(
+            instance = self.model(
                 title=title,
                 subtitle=subtitle,
                 author=author,
@@ -223,12 +234,17 @@ class BandScraper(BaseSeleniumScraper):
                 url=article_link,
             )
 
-            intance.save()
+            instance.save()
 
-        except Exception as e:
-            logger.error("Error while scraping link %s: %s", article_link, e)
-            raise
-
+        except ValueError as ve:
+            logger.error("Value error scraping link %s: %s", article_link, ve)
+        except InvalidSessionIdException as ise:
+            logger.error("Invalid session while scraping link %s: %s", article_link, ise)
+        except HTTPConnectionPool as hcp_ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except Exception as ex:
+            logger.error("Error while scraping link %s: %s", article_link, ex)
+            raise  # Re-raise if you want to propagate the original exception
         finally:
             try:
                 self.driver.close()
@@ -254,7 +270,7 @@ class BandScraper(BaseSeleniumScraper):
                 class_="cs-meta-author-name",
             ).text
         except AttributeError as at:
-            logger.error("Error trying to extract author, %s", at)
+            logger.info("Can't extract author, %s", at)
             return None
         return author
 
@@ -265,7 +281,7 @@ class BandScraper(BaseSeleniumScraper):
                 class_="cs-entry__subtitle",
             ).text
         except AttributeError as at:
-            logger.error("Error trying to extract subtitle, %s", at)
+            logger.warning("Can't extract subtitle, %s", at)
             return None
         return subtitle
 
@@ -308,7 +324,7 @@ class BandScraper(BaseSeleniumScraper):
             date_format = "%B %d, %Y"
             publication_date = datetime.datetime.strptime(date_string, date_format)
         except AttributeError as at:
-            logger.error("Error trying to extract publication date, %s", at)
+            logger.warning("Can't extract publication date, %s", at)
             return None
         return publication_date
 
@@ -344,12 +360,17 @@ class BBCBrasilScraper(BaseSeleniumScraper):
                 publication_date=publication_date,
                 url=article_link,
             )
-            return instance
+            instance.save()
 
-        except Exception as e:
-            logger.error("Error while scraping link %s: %s", article_link, e)
-            raise
-
+        except ValueError as ve:
+            logger.error("Value error scraping link %s: %s", article_link, ve)
+        except InvalidSessionIdException as ise:
+            logger.error("Invalid session while scraping link %s: %s", article_link, ise)
+        except HTTPConnectionPool as hcp_ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except Exception as ex:
+            logger.error("Error while scraping link %s: %s", article_link, ex)
+            raise  # Re-raise if you want to propagate the original exception
         finally:
             try:
                 self.driver.close()
@@ -366,15 +387,15 @@ class BBCBrasilScraper(BaseSeleniumScraper):
     def _extract_author(self, soup: BeautifulSoup):
         try:
             return soup.find("span", class_="bbc-1ypcc2").text
-        except AttributeError:
-            logger.warning("Author not found")
+        except AttributeError as at:
+            logger.warning("Can't extract author, %s", at)
             return None
 
     def _extract_subtitle(self, soup: BeautifulSoup):
         try:
             return soup.find("span", attrs={"data-testid": "caption-paragraph"}).text
-        except AttributeError:
-            logger.warning("Subtitle not found")
+        except AttributeError as at:
+            logger.warning("Can't extract subtitle, %s", at)
             return None
 
     def _extract_content(self, soup: BeautifulSoup):
@@ -424,12 +445,17 @@ class CNNBrasilScraper(BaseSeleniumScraper):
                 url=article_link,
             )
 
-            return instance
+            instance.save()
 
-        except Exception as e:
-            logger.error("Error while scraping link %s: %s", article_link, e)
-            raise
-
+        except ValueError as ve:
+            logger.error("Value error scraping link %s: %s", article_link, ve)
+        except InvalidSessionIdException as ise:
+            logger.error("Invalid session while scraping link %s: %s", article_link, ise)
+        except HTTPConnectionPool as hcp_ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except Exception as ex:
+            logger.error("Error while scraping link %s: %s", article_link, ex)
+            raise  # Re-raise if you want to propagate the original exception
         finally:
             try:
                 self.driver.close()
@@ -449,7 +475,7 @@ class CNNBrasilScraper(BaseSeleniumScraper):
             author_element = soup.find("span", class_="author__group")
             author = author_element.find("a").text
         except AttributeError as at:
-            logger.error("Error trying to extract author, %s", at)
+            logger.warning("Can't extract author, %s", at)
             return None
         return author
 
@@ -457,7 +483,7 @@ class CNNBrasilScraper(BaseSeleniumScraper):
         try:
             subtitle = soup.find("p", class_="single-header__excerpt").text
         except AttributeError as at:
-            logger.error("Error trying to extract subtitle, %s", at)
+            logger.warning("Can't extract subtitle, %s", at)
             return None
         return subtitle
 
@@ -486,6 +512,6 @@ class CNNBrasilScraper(BaseSeleniumScraper):
             publication_date = datetime.datetime.strptime(date_text, date_format)
 
         except AttributeError as at:
-            logger.error("Error trying to extract publication date, %s", at)
+            logger.warning("Can't extract publication date, %s", at)
             return None
         return publication_date
