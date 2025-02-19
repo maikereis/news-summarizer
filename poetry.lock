@@ -1822,6 +1822,19 @@ widgetsnbextension = ">=4.0.12,<4.1.0"
 test = ["ipykernel", "jsonschema", "pytest (>=3.6.0)", "pytest-cov", "pytz"]
 
 [[package]]
+name = "itsdangerous"
+version = "2.2.0"
+description = "Safely pass data to untrusted environments and back."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "python_version >= \"3.12\""
+files = [
+    {file = "itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"},
+    {file = "itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173"},
+]
+
+[[package]]
 name = "jedi"
 version = "0.19.2"
 description = "An autocompletion tool for Python that can be used for text editors."
@@ -4235,6 +4248,22 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "requests-file"
+version = "2.1.0"
+description = "File transport adapter for Requests"
+optional = false
+python-versions = "*"
+groups = ["main"]
+markers = "python_version >= \"3.12\""
+files = [
+    {file = "requests_file-2.1.0-py2.py3-none-any.whl", hash = "sha256:cf270de5a4c5874e84599fc5778303d496c10ae5e870bfa378818f35d21bda5c"},
+    {file = "requests_file-2.1.0.tar.gz", hash = "sha256:0f549a3f3b0699415ac04d167e9cb39bccfb730cb832b4d20be3d9867356e658"},
+]
+
+[package.dependencies]
+requests = ">=1.0.0"
+
+[[package]]
 name = "requests-toolbelt"
 version = "1.0.0"
 description = "A utility belt for advanced users of python-requests"
@@ -5005,6 +5034,29 @@ files = [
     {file = "threadpoolctl-3.5.0-py3-none-any.whl", hash = "sha256:56c1e26c150397e58c4926da8eeee87533b1e32bef131bd4bf6a2f45f3185467"},
     {file = "threadpoolctl-3.5.0.tar.gz", hash = "sha256:082433502dd922bf738de0d8bcc4fdcbf0979ff44c42bd40f5af8a282f6fa107"},
 ]
+
+[[package]]
+name = "tldextract"
+version = "5.1.3"
+description = "Accurately separates a URL's subdomain, domain, and public suffix, using the Public Suffix List (PSL). By default, this includes the public ICANN TLDs and their exceptions. You can optionally support the Public Suffix List's private domains as well."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "python_version >= \"3.12\""
+files = [
+    {file = "tldextract-5.1.3-py3-none-any.whl", hash = "sha256:78de310cc2ca018692de5ddf320f9d6bd7c5cf857d0fd4f2175f0cdf4440ea75"},
+    {file = "tldextract-5.1.3.tar.gz", hash = "sha256:d43c7284c23f5dc8a42fd0fee2abede2ff74cc622674e4cb07f514ab3330c338"},
+]
+
+[package.dependencies]
+filelock = ">=3.0.8"
+idna = "*"
+requests = ">=2.1.0"
+requests-file = ">=1.4"
+
+[package.extras]
+release = ["build", "twine"]
+testing = ["mypy", "pytest", "pytest-gitignore", "pytest-mock", "responses", "ruff", "syrupy", "tox", "tox-uv", "types-filelock", "types-requests"]
 
 [[package]]
 name = "tokenizers"
@@ -5916,15 +5968,15 @@ propcache = ">=0.2.0"
 
 [[package]]
 name = "zenml"
-version = "0.70.0"
+version = "0.74.0"
 description = "ZenML: Write production-ready ML code."
 optional = false
 python-versions = "<3.13,>=3.9"
 groups = ["main"]
 markers = "python_version >= \"3.12\""
 files = [
-    {file = "zenml-0.70.0-py3-none-any.whl", hash = "sha256:6b68f12f6d3dc57d73ad2a10446a193a3e2e27620fc2a0111a0b742de0fe369c"},
-    {file = "zenml-0.70.0.tar.gz", hash = "sha256:5cc1adb774946ca9fa0ab3c40c01fc3445afaa55a17d512ab5a97cf1c45eb914"},
+    {file = "zenml-0.74.0-py3-none-any.whl", hash = "sha256:2a608b05dc6c7037b6e839b269ca2ecd404cf7bd3fc67678439c5eff01cbacd9"},
+    {file = "zenml-0.74.0.tar.gz", hash = "sha256:a805382c61a55af2c7adc7959495d98b5ed9040aa59f0040e8ad5d37f28e5757"},
 ]
 
 [package.dependencies]
@@ -5937,6 +5989,7 @@ docker = ">=7.1.0,<7.2.0"
 fastapi = {version = ">=0.100,<=0.110", optional = true, markers = "extra == \"server\""}
 gitpython = ">=3.1.18,<4.0.0"
 ipinfo = {version = ">=4.4.3", optional = true, markers = "extra == \"server\""}
+itsdangerous = {version = ">=2.2.0,<2.3.0", optional = true, markers = "extra == \"server\""}
 Jinja2 = {version = "*", optional = true, markers = "extra == \"server\""}
 orjson = {version = ">=3.10.0,<3.11.0", optional = true, markers = "extra == \"server\""}
 packaging = ">=24.1"
@@ -5955,24 +6008,25 @@ setuptools = "*"
 sqlalchemy = ">=2.0.0,<3.0.0"
 sqlalchemy_utils = "*"
 sqlmodel = "0.0.18"
+tldextract = {version = ">=5.1.0,<5.2.0", optional = true, markers = "extra == \"server\""}
 uvicorn = {version = ">=0.17.5", extras = ["standard"], optional = true, markers = "extra == \"server\""}
 
 [package.extras]
 adlfs = ["adlfs (>=2021.10.0)"]
-azureml = ["azure-ai-ml (==1.18.0)"]
+azureml = ["azure-ai-ml (==1.23.1)"]
 connectors-aws = ["aws-profile-manager (>=0.5.0)", "boto3 (>=1.16.0)", "kubernetes (>=18.20.0)"]
-connectors-azure = ["azure-identity (>=1.4.0)", "azure-mgmt-containerregistry (>=10.0.0)", "azure-mgmt-containerservice (>=20.0.0)", "azure-mgmt-resource (>=21.0.0)", "azure-mgmt-storage (>=20.0.0)", "azure-storage-blob (>=12.0.0)", "kubernetes (>=18.20.0)"]
+connectors-azure = ["azure-identity (>=1.4.0)", "azure-mgmt-containerregistry (>=10.0.0)", "azure-mgmt-containerservice (>=20.0.0)", "azure-mgmt-resource (>=21.0.0)", "azure-mgmt-storage (>=20.0.0)", "azure-storage-blob (>=12.0.0)", "kubernetes (>=18.20.0)", "requests (>=2.27.11,<3.0.0)"]
 connectors-gcp = ["google-cloud-artifact-registry (>=1.11.3)", "google-cloud-container (>=2.21.0)", "google-cloud-storage (>=2.9.0)", "kubernetes (>=18.20.0)"]
 connectors-kubernetes = ["kubernetes (>=18.20.0)"]
 dev = ["bandit (>=1.7.5,<2.0.0)", "coverage[toml] (>=5.5,<6.0)", "darglint (>=1.8.1,<2.0.0)", "hypothesis (>=6.43.1,<7.0.0)", "maison (<2.0)", "mike (>=1.1.2,<2.0.0)", "mkdocs (>=1.2.3,<2.0.0)", "mkdocs-awesome-pages-plugin (>=2.6.1,<3.0.0)", "mkdocs-material (>=8.1.7,<9.0.0)", "mkdocstrings (>=0.17.0,<0.18.0)", "mypy (==1.7.1)", "pyment (>=0.3.3,<0.4.0)", "pytest (>=7.4.0,<8.0.0)", "pytest-clarity (>=1.0.1,<2.0.0)", "pytest-instafail (>=0.5.0)", "pytest-mock (>=3.6.1,<4.0.0)", "pytest-randomly (>=3.10.1,<4.0.0)", "pytest-rerunfailures (>=13.0)", "pytest-split (>=0.8.1,<0.9.0)", "ruff (>=0.1.7)", "tox (>=3.24.3,<4.0.0)", "types-Markdown (>=3.3.6,<4.0.0)", "types-Pillow (>=9.2.1,<10.0.0)", "types-PyMySQL (>=1.0.4,<2.0.0)", "types-PyYAML (>=6.0.0,<7.0.0)", "types-certifi (>=2021.10.8.0,<2022.0.0.0)", "types-croniter (>=1.0.2,<2.0.0)", "types-futures (>=3.3.1,<4.0.0)", "types-paramiko (>=3.4.0)", "types-passlib (>=1.7.7,<2.0.0)", "types-protobuf (>=3.18.0,<4.0.0)", "types-psutil (>=5.8.13,<6.0.0)", "types-python-dateutil (>=2.8.2,<3.0.0)", "types-python-slugify (>=5.0.2,<6.0.0)", "types-redis (>=4.1.19,<5.0.0)", "types-requests (>=2.27.11,<3.0.0)", "types-setuptools (>=57.4.2,<58.0.0)", "types-six (>=1.16.2,<2.0.0)", "types-termcolor (>=1.1.2,<2.0.0)", "typing-extensions (>=3.7.4)", "yamlfix (>=1.16.0,<2.0.0)"]
 gcsfs = ["gcsfs (>=2022.11.0)"]
 s3fs = ["s3fs (>=2022.11.0)"]
-sagemaker = ["sagemaker (>=2.117.0)"]
+sagemaker = ["sagemaker (>=2.199.0)"]
 secrets-aws = ["boto3 (>=1.16.0)"]
 secrets-azure = ["azure-identity (>=1.4.0)", "azure-keyvault-secrets (>=4.0.0)"]
 secrets-gcp = ["google-cloud-secret-manager (>=2.12.5)"]
 secrets-hashicorp = ["hvac (>=0.11.2)"]
-server = ["Jinja2", "fastapi (>=0.100,<=0.110)", "ipinfo (>=4.4.3)", "orjson (>=3.10.0,<3.11.0)", "pyjwt[crypto] (==2.7.*)", "python-multipart (>=0.0.9,<0.1.0)", "secure (>=0.3.0,<0.4.0)", "uvicorn[standard] (>=0.17.5)"]
+server = ["Jinja2", "fastapi (>=0.100,<=0.110)", "ipinfo (>=4.4.3)", "itsdangerous (>=2.2.0,<2.3.0)", "orjson (>=3.10.0,<3.11.0)", "pyjwt[crypto] (==2.7.*)", "python-multipart (>=0.0.9,<0.1.0)", "secure (>=0.3.0,<0.4.0)", "tldextract (>=5.1.0,<5.2.0)", "uvicorn[standard] (>=0.17.5)"]
 templates = ["copier (>=8.1.0)", "jinja2-time (>=0.2.0,<0.3.0)", "pyyaml-include (<2.0)", "ruff (>=0.1.7)"]
 vertex = ["google-cloud-aiplatform (>=1.34.0)", "kfp (>=2.6.0)"]
 
@@ -6093,4 +6147,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.8,<3.13"
-content-hash = "72cdaba6d7623c2db058516dd89a97a2b20e2f404dab4648d53496cccff32aea"
+content-hash = "6012cb925c05376a996befd105141496f81658a594b45f463a52f09f8a69f414"
