@@ -21,9 +21,6 @@ beautifulsoup4="^4.12.3"
 html2text="^2024.2.26"
 langchain-community= "^0.3.8"
 
-# Browser
-webdriver-manager = "^4.0.2"
-
 # Orchestration
 zenml = {extras = ["server"], version = "^0.70.0"}
 pandas = "^2.2.3"
