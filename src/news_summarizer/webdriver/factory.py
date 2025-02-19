@@ -1,4 +1,4 @@
-from .creators import ChromeWebDriverCreator, EdgeWebDriverCreator
+from .creators import ChromeWebDriverCreator, EdgeWebDriverCreator, FirefoxWebDriverCreator
 from .locators import BrowserLocator
 
 
@@ -7,13 +7,16 @@ class WebDriverFactory:
         self.browser_locator = browser_locator
 
     def get_webdriver(self):
-        chrome_path = self.browser_locator.find_browser("google-chrome")
+        firefox_path = self.browser_locator.find_browser("firefox")
         edge_path = self.browser_locator.find_browser("microsoft-edge-stable")
+        chrome_path = self.browser_locator.find_browser("google-chrome")
 
-        if edge_path:
-            creator = EdgeWebDriverCreator()
-        elif chrome_path:
+        if chrome_path:
             creator = ChromeWebDriverCreator()
+        elif firefox_path:
+            creator = FirefoxWebDriverCreator()
+        elif edge_path:
+            creator = EdgeWebDriverCreator()
         else:
             raise Exception("Neither Chrome nor Edge is installed. Please install one of them.")
 
