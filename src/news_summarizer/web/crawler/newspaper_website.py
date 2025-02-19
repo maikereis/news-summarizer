@@ -169,8 +169,11 @@ class G1Crawler(BaseSeleniumCrawler):
 
             except TimeoutException:
                 retry_count += 1
-                logger.error("Timeout.")
+                logger.warning("Timeout.")
                 continue
+            except Exception as ex:
+                logger.error("Unexpected error in scroll_page: %s", ex)
+                break
 
     def _extract_page_number(self, url):
         match = re.search(r"pagina-(\d+)", url)
@@ -224,8 +227,10 @@ class G1Crawler(BaseSeleniumCrawler):
 
             logger.debug("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
             self.model.bulk_insert(hyperlink_list)
-        except Exception as e:
-            logger.error("Error while crawling domain %s: %s", link, e)
+        except Exception as ex:
+            logger.error("Error while crawling domain %s: %s", link, ex)
+            raise
+        finally:
             self.driver.close()
 
 
@@ -309,12 +314,15 @@ class BandCrawler(BaseSeleniumCrawler):
 
             except TimeoutException:
                 retry_count += 1
-                logger.error("Timeout.")
+                logger.warning("Timeout.")
                 continue
             except StaleElementReferenceException as exc:
                 retry_count += 1
-                logger.error("Stale element found during scroll: %s", exc)
+                logger.warning("Stale element found during scroll: %s", exc)
                 continue
+            except Exception as ex:
+                logger.error("Unexpected error in scroll_page: %s", ex)
+                break
 
     def search(self, link: str, **kwargs) -> None:
         try:
@@ -353,8 +361,10 @@ class BandCrawler(BaseSeleniumCrawler):
 
             logger.debug("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
             self.model.bulk_insert(hyperlink_list)
-        except Exception as e:
-            logger.error("Error while crawling domain %s: %s", link, e)
+        except Exception as ex:
+            logger.error("Error while crawling domain %s: %s", link, ex)
+            raise
+        finally:
             self.driver.close()
 
 
@@ -419,8 +429,11 @@ class R7Crawler(BaseSeleniumCrawler):
 
             except TimeoutException:
                 retry_count += 1
-                logger.error("Timeout.")
+                logger.warning("Timeout.")
                 continue
+            except Exception as ex:
+                logger.error("Unexpected error in scroll_page: %s", ex)
+                break
 
     def search(self, link: str, **kwargs) -> None:
         try:
@@ -463,8 +476,10 @@ class R7Crawler(BaseSeleniumCrawler):
 
             logger.debug("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
             self.model.bulk_insert(hyperlink_list)
-        except Exception as e:
-            logger.error("Error while crawling domain %s: %s", link, e)
+        except Exception as ex:
+            logger.error("Error while crawling domain %s: %s", link, ex)
+            raise
+        finally:
             self.driver.close()
 
     def accept_cookies(self):
@@ -550,8 +565,11 @@ class CNNBrasilCrawler(BaseSeleniumCrawler):
 
             except TimeoutException:
                 retry_count += 1
-                logger.error("Timeout.")
+                logger.warning("Timeout.")
                 continue
+            except Exception as ex:
+                logger.error("Unexpected error in scroll_page: %s", ex)
+                break
 
     def accept_cookies(self):
         button = WebDriverWait(self.driver, 20).until(
@@ -592,8 +610,10 @@ class CNNBrasilCrawler(BaseSeleniumCrawler):
 
             logger.debug("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
             self.model.bulk_insert(hyperlink_list)
-        except Exception as e:
-            logger.error("Error while crawling domain %s: %s", link, e)
+        except Exception as ex:
+            logger.error("Error while crawling domain %s: %s", link, ex)
+            raise
+        finally:
             self.driver.close()
 
 
@@ -679,8 +699,11 @@ class BBCBrasilCrawler(BaseSeleniumCrawler):
 
             except TimeoutException:
                 retry_count += 1
-                logger.error("Timeout.")
+                logger.warning("Timeout.")
                 continue
+            except Exception as ex:
+                logger.error("Unexpected error in scroll_page: %s", ex)
+                break
 
     def accept_cookies(self):
         button = WebDriverWait(self.driver, 20).until(
@@ -731,6 +754,8 @@ class BBCBrasilCrawler(BaseSeleniumCrawler):
 
             logger.debug("Found %s hyperlinks on '%s'", len(hyperlink_list), link)
             self.model.bulk_insert(hyperlink_list)
-        except Exception as e:
-            logger.error("Error while crawling domain %s: %s", link, e)
+        except Exception as ex:
+            logger.error("Error while crawling domain %s: %s", link, ex)
+            raise
+        finally:
             self.driver.close()
