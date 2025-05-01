@@ -19,7 +19,7 @@ system_prompt_template = """Você é um assistente especializado em resumir not�
 """
 
 
-summarization_prompt_template = """Resuma essa noticia. Para isso você deve: Ler toda a notícia. \
+summarization_prompt_template = """Resuma essa notícia. Para isso você deve: Ler toda a notícia. \
 Determinar o tema central da notícia e as informações mais relevantes que o autor deseja transmitir. \
 Focar nos fatos e dados mais importantes, deixando de lado detalhes secundários ou exemplos específicos. \
 Evitar adicionar opiniões pessoais ou interpretações. O resumo deve refletir fielmente o conteúdo original. \
@@ -27,9 +27,9 @@ Escrever de forma direta e simples, evitando jargões ou termos técnicos desnec
 Manter a ordem lógica das informações apresentadas no artigo original, garantindo que o resumo seja coeso e fácil de entender. \
 Certificar-se de que todas as informações incluídas no resumo estão corretas e correspondem ao conteúdo do artigo. \
 
-Você deve responder utilizando a mesma lingua da notícia. \
-Cada resposta deve conter apenas o resumo, sem palavras chave como 'Resumo:', não deve possuir multiplos espaços entre os parágrafos.
-Noticia
+Você deve responder utilizando a mesma língua da notícia. \
+Cada resposta deve conter apenas o resumo, sem palavras-chave como 'Resumo:', não deve possuir múltiplos espaços entre os parágrafos.
+Notícia
 {article}"""
 
 
