@@ -44,7 +44,7 @@ services:
     image: zenmldocker/zenml-server:0.74.0
     container_name: zenml_server
     ports:
-      - "8237:8080"
+      - "${ZENML_PORT}:8080"
     environment:
       - ZENML_STORE_URL=mysql://root:password@host.docker.internal/zenml
       - ZENML_DEFAULT_USER_NAME=${ZENML_USER}
