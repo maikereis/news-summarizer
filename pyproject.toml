@@ -7,6 +7,9 @@ packages = [{include = "*", from="src"}]
 license="MIT"
 readme="README.md"
 
+[virtualenvs]
+in-project = true
+
 [tool.poetry.dependencies]
 python = ">=3.11.8,<3.13"
 
