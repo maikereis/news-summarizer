@@ -2,7 +2,9 @@
 
 Stay informed with personalized updates on the themes that matter most. Avoid information overload by cutting through the noise of repetitive articles. Effortlessly understand the context behind sensational headlines with clear and concise summaries. Stay up-to-date as new developments enrich your understanding of ongoing stories.
 
-NewsSummarizer is a LLM-based summarizer of news.
+NewsSummarizer is a LLM-based summarizer of news. 
+
+** [installation guide](INSTALL.md) **
 
 ---
 
