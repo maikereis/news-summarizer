@@ -39,6 +39,13 @@ services:
       - MYSQL_ROOT_PASSWORD=password
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p=password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 
   zenml:
     image: zenmldocker/zenml-server:0.74.0
@@ -53,7 +60,8 @@ services:
     links:
       - mysql
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: on-failure
