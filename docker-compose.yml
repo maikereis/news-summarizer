@@ -32,7 +32,7 @@ services:
 
   mysql:
     image: mysql:8.0
-    container_name: zenml_mysql
+    container_name: news_summarizer_mysql
     ports:
       - 3306:3306
     environment:
@@ -45,22 +45,69 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    restart: always
+    networks:
+      - local
+
+  minio:
+    image: minio/minio:latest
+    container_name: news_summarizer_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # Enable console and API
+      MINIO_BROWSER: "on"
+      MINIO_CONSOLE_ADDRESS: ":9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - local
+    restart: always
+
+  minio-init:
+    image: minio/mc
+    container_name: news_summarizer_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5;
+        mc alias set localminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+        mc find localminio/zenml-artifacts || mc mb localminio/zenml-artifacts;
+        exit 0;
+      "
+    networks:
+      - local
 
 
   zenml:
     image: zenmldocker/zenml-server:0.74.0
-    container_name: zenml_server
+    container_name: news_summarizer_zenml
     ports:
       - "${ZENML_PORT}:8080"
     environment:
-      - ZENML_STORE_URL=mysql://root:password@host.docker.internal/zenml
+      - ZENML_STORE_URL=mysql://root:password@mysql/zenml
       - ZENML_DEFAULT_USER_NAME=${ZENML_USER}
       - ZENML_DEFAULT_USER_PASSWORD=${ZENML_PASSWORD}
       - ZENML_SERVER_AUTO_ACTIVATE=1
     links:
       - mysql
+      - minio
     depends_on:
       mysql:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -68,6 +115,34 @@ services:
     logging:
       options:
         max-size: 1g
+    networks:
+      - local
+
+  zenml-bootstrap:
+    image: python:3.11-slim
+    container_name: news_summarizer_zenml_bootstrap
+    depends_on:
+      zenml:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+    working_dir: /app
+    links:
+      - zenml
+      - minio
+    volumes:
+      - .:/app
+    environment:
+      - ZENML_STORE_URL=http://zenml:8080
+      - ZENML_USERNAME=${ZENML_USER}
+      - ZENML_PASSWORD=${ZENML_PASSWORD}
+      - ENDPOINT_URL=http://localhost:9000 # zenml steps uses host network
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_REGION=${MINIO_REGION}
+    entrypoint: /bin/sh -c "/app/bootstrap.sh"
+    networks:
+      - local
 
 volumes:
   mongo_data:
@@ -75,6 +150,7 @@ volumes:
   qdrant_data:
     external: true
   mysql_data:
+  minio_data:
 
 networks:
   local:

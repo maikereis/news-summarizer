@@ -25,7 +25,7 @@ html2text="^2024.2.26"
 langchain-community= "^0.3.8"
 
 # Orchestration
-zenml = {extras = ["server"], version = "^0.74.0"}
+zenml = {extras = ["server", "s3"], version = "^0.74.0"}
 pandas = "^2.2.3"
 typer = "^0.14.0"
 sentence-transformers = "^3.3.1"
@@ -37,6 +37,7 @@ accelerate = "^1.2.1"
 autoawq = "^0.2.7.post3"
 optimum = "^1.23.3"
 auto-gptq = "^0.7.1"
+ipykernel = "^6.29.5"
 
 
 [build-system]
