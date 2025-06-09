@@ -26,6 +26,7 @@ langchain-community= "^0.3.8"
 
 # Orchestration
 zenml = {extras = ["server", "s3"], version = "^0.74.0"}
+s3fs = {extras = ["boto3"], version = ">=2023.12.0"}
 pandas = "^2.2.3"
 typer = "^0.14.0"
 sentence-transformers = "^3.3.1"
