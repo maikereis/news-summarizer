@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from news_summarizer.domain.chunks import ArticleChunk
-from news_summarizer.domain.embeddeg_chunks import EmbeddedArticleChunk
+from news_summarizer.domain.embedded_chunks import EmbeddedArticleChunk
 
 
 class EmbedderService:
