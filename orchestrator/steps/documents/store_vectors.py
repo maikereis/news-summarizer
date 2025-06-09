@@ -2,7 +2,7 @@ import logging
 from typing import List, Union
 
 from news_summarizer.domain.clean_documents import CleanedArticle
-from news_summarizer.domain.embeddeg_chunks import EmbeddedArticleChunk
+from news_summarizer.domain.embedded_chunks import EmbeddedArticleChunk
 from news_summarizer.utils import batch
 from typing_extensions import Annotated
 from zenml import get_step_context, step
@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 @step
-def store(embedded_documents: Annotated[list, "embedded_documents"]) -> Annotated[bool, "successful"]:
+def store(
+    embedded_documents: Annotated[List[EmbeddedArticleChunk], "embedded_documents"],
+) -> Annotated[bool, "successful"]:
     try:
         for batched_embedded_documents in batch(embedded_documents, 10):
             store_all_vectors(batched_embedded_documents)

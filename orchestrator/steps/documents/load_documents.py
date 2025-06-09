@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 from news_summarizer.domain.documents import Article
 from typing_extensions import Annotated
@@ -8,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 @step
-def load() -> Annotated[list, "raw_documents"]:
+def load() -> Annotated[List[Article], "raw_documents"]:
     articles = _fetch_all_articles()
 
     metadata = {"loaded_documents": {"num_documents": len(articles)}}

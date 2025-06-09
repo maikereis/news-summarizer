@@ -4,4 +4,4 @@ python orchestrator scrap-links
 
 python orchestrator index-articles
 
-python orchestrator generate-datasets
+python orchestrator generate-datasets preference

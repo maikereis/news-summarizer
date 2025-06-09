@@ -1,6 +1,8 @@
 import logging
+from typing import List
 
 from news_summarizer.domain.clean_documents import CleanedArticle
+from news_summarizer.domain.documents import Article
 from news_summarizer.preprocessing.text import pipeline
 from typing_extensions import Annotated
 from zenml import get_step_context, step
@@ -10,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 @step
 def clean(
-    documents: Annotated[list, "raw_documents"],
-) -> Annotated[list, "cleaned_documents"]:
+    documents: Annotated[List[Article], "raw_documents"],
+) -> Annotated[List[CleanedArticle], "cleaned_documents"]:
     success_count = 0
     failure_count = 0
 

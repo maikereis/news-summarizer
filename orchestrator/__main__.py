@@ -35,8 +35,8 @@ def index_articles():
 
 
 @app.command()
-def generate_datasets():
-    generate()
+def generate_datasets(dataset_type: str):
+    generate(dataset_type)
 
 
 if __name__ == "__main__":

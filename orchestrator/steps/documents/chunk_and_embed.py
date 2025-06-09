@@ -1,5 +1,8 @@
 import logging
+from typing import List
 
+from news_summarizer.domain.clean_documents import CleanedArticle
+from news_summarizer.domain.embedded_chunks import EmbeddedArticleChunk
 from news_summarizer.embeddings import EmbeddingModel
 from news_summarizer.services.chunk import ChunkingService
 from news_summarizer.services.embed import EmbedderService
@@ -26,8 +29,8 @@ BRAZILLIAN_PORTUGUESE_SEPARATORS = [
 
 @step
 def vectorize(
-    cleaned_documents: Annotated[list, "cleaned_documents"],
-) -> Annotated[list, "embedded_documents"]:
+    cleaned_documents: Annotated[List[CleanedArticle], "cleaned_documents"],
+) -> Annotated[List[EmbeddedArticleChunk], "embedded_documents"]:
     embedder = EmbeddingModel(device=device_selector(), cache_dir=None)
     chunking_service = ChunkingService(separators=BRAZILLIAN_PORTUGUESE_SEPARATORS)
     embedder_service = EmbedderService(embedder)

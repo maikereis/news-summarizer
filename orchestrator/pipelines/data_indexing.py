@@ -1,4 +1,4 @@
-from steps.data_indexing import clean, load, store, vectorize
+from steps.documents import clean, load, store, vectorize
 from zenml import pipeline
 
 
