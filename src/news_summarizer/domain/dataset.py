@@ -1,3 +1,5 @@
+from datasets import Dataset
+
 from .base import VectorBaseDocument
 
 
@@ -11,6 +13,11 @@ class SummaryDatasetSample(VectorBaseDocument):
 
 class SummaryDataset(VectorBaseDocument):
     samples: list[SummaryDatasetSample]
+
+    def to_hfdataset(self) -> Dataset:
+        data = self.model_dump()
+        dataset = Dataset.from_list(data["samples"])
+        return dataset
 
     class Config:
         category = "summary_dataset"
@@ -35,6 +42,11 @@ class PreferenceDatasetSample(VectorBaseDocument):
 
 class PreferenceDataset(VectorBaseDocument):
     samples: list[PreferenceDatasetSample]
+
+    def to_hfdataset(self) -> Dataset:
+        data = self.model_dump()
+        dataset = Dataset.from_list(data["samples"])
+        return dataset
 
     class Config:
         category = "preference_dataset"

@@ -9,10 +9,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import torch
+from pydantic import ValidationError
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from news_summarizer.config import settings
 from news_summarizer.domain.clean_documents import CleanedArticle
+from news_summarizer.domain.dataset import (
+    PreferenceDataset,
+    PreferenceDatasetSample,
+    PreferenceDatasetTriplet,
+    SummaryDataset,
+    SummaryDatasetSample,
+)
 from news_summarizer.domain.prompt import GenerateDatasetSamplesPrompt
 from news_summarizer.utils import RateCalculator, batch
 
@@ -70,7 +78,7 @@ Notícia
 
 @dataclass
 class Response:
-    triplets: List[Dict[str, str]]
+    triplets: List[PreferenceDatasetTriplet]
 
 
 class DatasetGenerator(ABC):
@@ -193,12 +201,28 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
             logger.info("Current rate: %.2f prompts/minute", rate)
         return articles, responses
 
-    def _format_output(self, articles, responses):
-        return [
-            {"article": article, "summary": response} for article, response in zip(articles, responses, strict=True)
-        ]
+    def _parse_summary_sample(self, article: str, response: str) -> Optional[SummaryDatasetSample]:
+        try:
+            return SummaryDatasetSample(article=article, summary=response)
+        except ValidationError as err:
+            logger.error("Validation error: %s", err)
+        except Exception as ex:
+            logger.error("Unexpected error: %s", ex)
+        return None
 
-    def generate(self, documents: List[CleanedArticle]):
+    def _extract_summaries(self, articles: list[str], responses: list[str]) -> list[SummaryDatasetSample]:
+        samples = []
+        for article, response in zip(articles, responses, strict=True):
+            sample = self._parse_summary_sample(article, response)
+            if sample:
+                samples.append(sample)
+        return samples
+
+    def _format_output(self, articles: list[str], responses: list[str]) -> SummaryDataset:
+        samples = self._extract_summaries(articles, responses)
+        return SummaryDataset(samples=samples)
+
+    def generate(self, documents: List[CleanedArticle]) -> SummaryDataset:
         prompts = self._get_prompts(documents)
         articles, responses = self._process_batches(prompts)
         return self._format_output(articles, responses)
@@ -319,28 +343,45 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
         return articles, responses
 
     def _clean_markdown_block(self, triplet_str: str) -> Dict[str, Any]:
-        """Clean markdown block and parse JSON string into a dictionary."""
+        """Removes markdown syntax and parses JSON string into a dictionary."""
         clean_string = re.sub(r"```(?:json)?\s*|\s*```", "", triplet_str, flags=re.DOTALL).strip()
-
         return json.loads(clean_string)
 
-    def _extract_triplets(self, articles: List[str], responses: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    def _parse_preference_sample(self, article: str, response: str) -> Optional[PreferenceDatasetSample]:
+        """Parses response JSON into a PreferenceDatasetSample instance."""
+        try:
+            parsed = self._clean_markdown_block(response)
+            sample_dict = {"article": article, "triplets": parsed["triplets"]}
+            return PreferenceDatasetSample(**sample_dict)
+        except (JSONDecodeError, TypeError, KeyError) as err:
+            logger.error("Invalid character found trying to parse triplet: %s", err)
+        except ValidationError as err:
+            error_info = err.errors()[0]
+            logger.error(
+                "In '%s' list at index '%s' missing field '%s'",
+                error_info["loc"][0],
+                error_info["loc"][1],
+                error_info["loc"][2],
+            )
+        except Exception as ex:
+            logger.error("Unexpected error: %s", ex)
+        return None
+
+    def _extract_triplets(self, articles: List[str], responses: List[str]) -> List[PreferenceDatasetSample]:
+        """Extracts structured triplet data from article-response pairs."""
         samples = []
         for article, response in zip(articles, responses, strict=False):
-            try:
-                parsed = self._clean_markdown_block(response)
-                response = Response(**parsed)
-                samples.append((article, response.triplets))
-            except (JSONDecodeError, TypeError, KeyError) as err:
-                logger.error("Invalid character found trying to parse triplet: %s", err)
-                continue
+            sample = self._parse_preference_sample(article, response)
+            if sample:
+                samples.append(sample)
         return samples
 
-    def _format_output(self, articles, responses):
+    def _format_preference_output(self, articles: List[str], responses: List[str]) -> PreferenceDataset:
+        """Formats parsed samples into a PreferenceDataset."""
         samples = self._extract_triplets(articles, responses)
-        return [{"article": sample[0], "triplets": sample[1]} for sample in samples]
+        return PreferenceDataset(samples=samples)
 
-    def generate(self, documents: List[CleanedArticle]):
+    def generate(self, documents: List[CleanedArticle]) -> PreferenceDataset:
         prompts = self._get_prompts(documents)
         articles, responses = self._process_batches(prompts)
-        return self._format_output(articles, responses)
+        return self._format_preference_output(articles, responses)
