@@ -1,3 +1,5 @@
+"""Step for cleaning article text content."""
+
 import logging
 from typing import List
 
@@ -11,14 +13,15 @@ logger = logging.getLogger(__name__)
 
 
 @step
-def clean(
-    documents: Annotated[List[Article], "raw_documents"],
-) -> Annotated[List[CleanedArticle], "cleaned_documents"]:
+def clean_articles(
+    articles: Annotated[List[Article], "raw_articles"],
+) -> Annotated[List[CleanedArticle], "cleaned_articles"]:
+    """Clean and preprocess article text content."""
+    cleaned_articles = []
     success_count = 0
     failure_count = 0
 
-    cleaned_documents = []
-    for article in documents:
+    for article in articles:
         try:
             cleaned_article = CleanedArticle(
                 id=article.id,
@@ -29,26 +32,25 @@ def clean(
                 publication_date=article.publication_date,
                 url=article.url,
             )
-            cleaned_documents.append(cleaned_article)
+            cleaned_articles.append(cleaned_article)
             success_count += 1
-        except Exception:
-            logger.error(
-                "Error trying to clean the content of article %s from %s.",
-                article.id,
-                article.url,
-            )
+
+        except Exception as exc:
+            logger.error("Failed to clean article %s from %s: %s", article.id, article.url, exc)
             failure_count += 1
-            continue
 
     metadata = {
-        "cleaned_documents": {
-            "success_count": success_count,
-            "failure_count": failure_count,
+        "cleaning_results": {
+            "successful": success_count,
+            "failed": failure_count,
+            "success_rate": success_count / len(articles) if articles else 0,
             "status": "success" if failure_count == 0 else "partial_success",
         }
     }
 
-    step_context = get_step_context()
-    step_context.add_output_metadata(output_name="cleaned_documents", metadata=metadata)
+    context = get_step_context()
+    context.add_output_metadata(output_name="cleaned_articles", metadata=metadata)
 
-    return cleaned_documents
+    logger.info("Cleaned %d/%d articles successfully", success_count, len(articles))
+
+    return cleaned_articles

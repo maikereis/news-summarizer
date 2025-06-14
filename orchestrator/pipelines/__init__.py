@@ -1,6 +1,8 @@
-from .data_fetching import crawl
-from .data_indexing import index_data
-from .data_ingestion import scrap
-from .generate_dataset import generate
+"""Pipeline definitions for the orchestrator."""
 
-__all__ = ["crawl", "scrap", "index_data", "generate"]
+from .article_extraction import scrape_news_articles
+from .dataset_generation import generate_training_dataset
+from .document_processing import process_documents
+from .link_extraction import crawl_news_links
+
+__all__ = ["crawl_news_links", "scrape_news_articles", "process_documents", "generate_training_dataset"]

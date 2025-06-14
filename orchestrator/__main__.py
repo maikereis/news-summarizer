@@ -3,7 +3,7 @@ from typing import List
 
 import typer
 import yaml
-from pipelines import crawl, generate, index_data, scrap
+from pipelines import crawl_news_links, generate_training_dataset, process_documents, scrape_news_articles
 
 app = typer.Typer()
 
@@ -21,22 +21,22 @@ def crawl_links(yaml_filepath: Path):
     if links is None:
         return
 
-    crawl(links)
+    crawl_news_links(links)
 
 
 @app.command()
-def scrap_links():
-    scrap()
+def scrape_content():
+    scrape_news_articles()
 
 
 @app.command()
-def index_articles():
-    index_data()
+def process_content():
+    process_documents()
 
 
 @app.command()
 def generate_datasets(dataset_type: str):
-    generate(dataset_type)
+    generate_training_dataset(dataset_type)
 
 
 if __name__ == "__main__":

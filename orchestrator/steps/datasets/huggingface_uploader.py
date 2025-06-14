@@ -1,3 +1,5 @@
+"""Step for uploading datasets to Hugging Face Hub."""
+
 from typing import Union
 
 from news_summarizer.config import settings
@@ -5,10 +7,11 @@ from news_summarizer.domain.dataset import PreferenceDataset, SummaryDataset
 from zenml import step
 
 
-@step(enable_cache=True)
-def to_hugging(name: str, dataset: Union[SummaryDataset, PreferenceDataset]):
+@step
+def upload_to_huggingface(repository_name: str, dataset: Union[SummaryDataset, PreferenceDataset]):
+    """Upload dataset to Hugging Face Hub."""
     hf_dataset = dataset.to_hfdataset()
     hf_dataset.push_to_hub(
-        name,
+        repository_name,
         token=settings.huggingface.access_token.get_secret_value(),
     )

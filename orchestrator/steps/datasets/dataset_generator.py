@@ -1,3 +1,5 @@
+"""Step for generating training datasets."""
+
 import logging
 from typing import List, Union
 
@@ -12,47 +14,46 @@ from zenml import get_step_context, step
 
 logger = logging.getLogger(__name__)
 
-# Define a type alias for clarity
-DatasetOutput = Annotated[Union[PreferenceDataset, SummaryDataset], "generated_dataset"]
-
 
 @step(enable_cache=False)
-def generate_datasets(
-    documents: Annotated[List[CleanedArticle], "cleaned_documents"], dataset_type: str = "preference"
-) -> DatasetOutput:
-    step_context = get_step_context()
+def create_dataset(
+    articles: Annotated[List[CleanedArticle], "cleaned_articles"], dataset_type: str = "preference"
+) -> Annotated[Union[PreferenceDataset, SummaryDataset], "generated_dataset"]:
+    """Generate training dataset from cleaned articles."""
+    context = get_step_context()
 
     if dataset_type == "preference":
-        logger.info("Start preference dataset generation")
+        logger.info("Generating preference dataset from %d articles", len(articles))
         generator = PreferenceDatasetGenerator(cache_dir="./.model_cache")
-        dataset = generator.generate(documents)
+        dataset = generator.generate(articles)
 
         metadata = {
             "dataset_type": "preference",
-            "preference_generator": {
+            "generator_config": {
                 "model_id": generator.model_id,
-                "context_size": generator.max_input_length,
+                "max_input_length": generator.max_input_length,
             },
+            "input_articles": len(articles),
         }
 
-        step_context.add_output_metadata(metadata=metadata)
-        return dataset
-
     elif dataset_type == "summarization":
-        logger.info("Start summarization dataset generation")
+        logger.info("Generating summarization dataset from %d articles", len(articles))
         generator = SummarizationDatasetGenerator(cache_dir="./.model_cache")
-        dataset = generator.generate(documents)
+        dataset = generator.generate(articles)
 
         metadata = {
             "dataset_type": "summarization",
-            "summary_generator": {
+            "generator_config": {
                 "model_id": generator.model_id,
-                "context_size": generator.max_input_length,
+                "max_input_length": generator.max_input_length,
             },
+            "input_articles": len(articles),
         }
-
-        step_context.add_output_metadata(metadata=metadata)
-        return dataset
 
     else:
         raise ValueError(f"Unsupported dataset_type: {dataset_type}. Must be 'preference' or 'summarization'.")
+
+    context.add_output_metadata(output_name="generated_dataset", metadata=metadata)
+    logger.info("Dataset generation completed successfully")
+
+    return dataset
