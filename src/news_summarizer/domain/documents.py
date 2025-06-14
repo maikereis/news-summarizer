@@ -20,7 +20,7 @@ class Link(NoSQLBaseDocument):
     def url_string(self, url: AnyUrl):
         return str(url)
 
-    class Settings:
+    class Config:
         name = "link"
 
 
@@ -36,5 +36,5 @@ class Article(NoSQLBaseDocument):
     def url_string(self, url: AnyUrl):
         return str(url)
 
-    class Settings:
+    class Config:
         name = "article"

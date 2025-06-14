@@ -36,7 +36,7 @@ class DomainLink(NoSQLBaseDocument):
     name: str
     url: str
 
-    class Settings:
+    class Config:
         name = "domain_link"
 
 
