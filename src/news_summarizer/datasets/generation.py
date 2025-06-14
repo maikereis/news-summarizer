@@ -88,6 +88,25 @@ class DatasetGenerator(ABC):
 
 
 class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
+    """Generates summarization datasets from cleaned articles using a language model.
+
+    This service automates the process of generating summaries for articles by interacting
+    with a causal language model (LLM). It formats articles into prompt templates, sends
+    them to the LLM, and parses the responses into structured dataset samples.
+
+    Inherits:
+        DatasetGenerator: Provides dataset generation interface.
+        RateCalculator: Provides rate calculation utilities (prompts per minute).
+
+    Attributes:
+        _template (str): Prompt template for summarization.
+        _model_id (str): Hugging Face model ID used for text generation.
+        _device (str): Device identifier for model execution (e.g., 'cuda', 'cpu').
+        _batch_size (int): Number of prompts processed per batch.
+        _model: The loaded causal language model.
+        _tokenizer: The tokenizer associated with the model.
+    """
+
     def __init__(
         self,
         template: str = summarization_prompt_template,
@@ -97,6 +116,16 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
         cache_dir: Optional[Path] = None,
         task: str = "text-generation",
     ) -> None:
+        """Initializes the summarization dataset generator.
+
+        Args:
+            template (str): Prompt template for summarization.
+            model_id (str): Hugging Face model ID for the LLM.
+            device (str): Target device for model execution ('cpu', 'cuda', etc.).
+            batch_size (int): Batch size for prompt processing.
+            cache_dir (Optional[Path]): Directory for caching model files.
+            task (str): Model task type (default is 'text-generation').
+        """
         self._template = template
         self._model_id = model_id
         self._device = device
@@ -118,33 +147,91 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
 
     @property
     def model_id(self) -> str:
+        """str: Returns the model ID."""
         return self._model_id
 
     @property
     def max_input_length(self) -> int:
+        """int: Maximum number of input tokens supported by the model."""
         return self._model.config.max_position_embeddings
 
-    def _get_prompt(self, document: CleanedArticle) -> GenerateDatasetSamplesPrompt:
+    def _is_valid_article(self, content: str) -> bool:
+        """Validates if an article content fits within the model's input limits.
+
+        Args:
+            content (str): Article content to validate.
+
+        Returns:
+            bool: True if valid (non-empty and within token limits), False otherwise.
+        """
+        if not content or content.strip() == "":
+            logger.warning("Empty article detected and skipped.")
+            return False
+
+        prompt = self._template.format(article=content)
+        num_tokens = len(self._tokenizer.encode(prompt))
+
+        if num_tokens > self.max_input_length:
+            logger.warning(
+                "Article too long (%d tokens, max %d). Skipping.",
+                num_tokens,
+                self.max_input_length,
+            )
+            return False
+
+        return True
+
+    def _get_prompt(self, document: CleanedArticle) -> Optional[GenerateDatasetSamplesPrompt]:
+        """Generates a single prompt for a document if it is valid.
+
+        Args:
+            document (CleanedArticle): The cleaned article.
+
+        Returns:
+            Optional[GenerateDatasetSamplesPrompt]: The prompt object or None if invalid.
+        """
+        if not self._is_valid_article(document.content):
+            return None
+
         input_variables = {"article": document.content}
         prompt = self._template.format(**input_variables)
-        prompt_tokens = self._tokenizer.encode(prompt)
-        num_tokens = len(prompt_tokens)
+        num_tokens = len(self._tokenizer.encode(prompt))
 
-        generated_dataset_sample = GenerateDatasetSamplesPrompt(
-            template=summarization_prompt_template,
+        return GenerateDatasetSamplesPrompt(
+            template=self._template,
             input_variables=input_variables,
             content=prompt,
             num_tokens=num_tokens,
-            data_category="summariation_dataset",
+            data_category="summarization_dataset",
             document=document,
         )
 
-        return generated_dataset_sample
-
     def _get_prompts(self, documents: list[CleanedArticle]) -> list[GenerateDatasetSamplesPrompt]:
-        return [self._get_prompt(document) for document in documents]
+        """Generates prompts for a list of documents.
 
-    def _create_messages(self, article: str) -> List[Dict[str, str]]:
+        Args:
+            documents (list[CleanedArticle]): A list of cleaned articles.
+
+        Returns:
+            list[GenerateDatasetSamplesPrompt]: List of valid prompts.
+        """
+        prompts = []
+        for doc in documents:
+            prompt = self._get_prompt(doc)
+            if prompt is not None:
+                prompts.append(prompt)
+        return prompts
+
+    def _create_messages(self, content: str) -> List[Dict[str, str]]:
+        """Formats the input content into a chat-based message structure.
+
+        Args:
+            content (str): Article content.
+
+        Returns:
+            List[Dict[str, str]]: Message structure compatible with the tokenizer's
+            chat template.
+        """
         return [
             {
                 "role": "system",
@@ -152,11 +239,19 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
             },
             {
                 "role": "user",
-                "content": summarization_prompt_template.format(article=article),
+                "content": self._template.format(article=content),
             },
         ]
 
     def _process_batch(self, prompt_batch: List[GenerateDatasetSamplesPrompt]):
+        """Processes a batch of prompts to generate summaries.
+
+        Args:
+            prompt_batch (List[GenerateDatasetSamplesPrompt]): A batch of prompts.
+
+        Returns:
+            List[str]: List of generated summary responses.
+        """
         # Create messages for all prompts in the batch
         messages_batch = [self._create_messages(prompt.content) for prompt in prompt_batch]
 
@@ -179,11 +274,22 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
             for output_ids, input_length in zip(generated_ids, input_lengths, strict=False)
         ]
 
+        del model_inputs, generated_ids
+
         torch.cuda.empty_cache()
 
         return responses
 
     def _process_batches(self, prompts: List[GenerateDatasetSamplesPrompt]) -> List[Dict[str, str]]:
+        """Processes all prompts in batches.
+
+        Args:
+            prompts (List[GenerateDatasetSamplesPrompt]): List of prompts.
+
+        Returns:
+            Tuple[List[str], List[str]]: Tuple containing article contents and
+            their generated summaries.
+        """
         articles, responses = [], []
 
         self._start_time = time.time()
@@ -199,9 +305,19 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
             self._counter += self._batch_size
             rate = self._calculate_rate()
             logger.info("Current rate: %.2f prompts/minute", rate)
+
         return articles, responses
 
     def _parse_summary_sample(self, article: str, response: str) -> Optional[SummaryDatasetSample]:
+        """Parses a response into a summary sample.
+
+        Args:
+            article (str): Original article content.
+            response (str): Model-generated summary.
+
+        Returns:
+            Optional[SummaryDatasetSample]: Parsed dataset sample or None if parsing fails.
+        """
         try:
             return SummaryDatasetSample(article=article, summary=response)
         except ValidationError as err:
@@ -211,6 +327,15 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
         return None
 
     def _extract_summaries(self, articles: list[str], responses: list[str]) -> list[SummaryDatasetSample]:
+        """Creates summary dataset samples from articles and their responses.
+
+        Args:
+            articles (list[str]): Original articles.
+            responses (list[str]): Generated summaries.
+
+        Returns:
+            list[SummaryDatasetSample]: List of valid summary samples.
+        """
         samples = []
         for article, response in zip(articles, responses, strict=True):
             sample = self._parse_summary_sample(article, response)
@@ -219,16 +344,60 @@ class SummarizationDatasetGenerator(DatasetGenerator, RateCalculator):
         return samples
 
     def _format_output(self, articles: list[str], responses: list[str]) -> SummaryDataset:
+        """Formats the articles and summaries into a dataset object.
+
+        Args:
+            articles (list[str]): Original articles.
+            responses (list[str]): Generated summaries.
+
+        Returns:
+            SummaryDataset: Structured dataset with summary samples.
+        """
         samples = self._extract_summaries(articles, responses)
         return SummaryDataset(samples=samples)
 
     def generate(self, documents: List[CleanedArticle]) -> SummaryDataset:
+        """Generates a summarization dataset from a list of cleaned articles.
+
+        Args:
+            documents (List[CleanedArticle]): List of cleaned article documents.
+
+        Returns:
+            SummaryDataset: Dataset containing the article-summary pairs.
+
+        Example:
+            >>> generator = SummarizationDatasetGenerator()
+            >>> dataset = generator.generate(list_of_articles)
+        """
         prompts = self._get_prompts(documents)
+
+        if not prompts:
+            logger.warning("No valid prompts to process. Exiting generation.")
+            return SummaryDataset(samples=[])
+
         articles, responses = self._process_batches(prompts)
         return self._format_output(articles, responses)
 
 
 class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
+    """
+    Generates preference datasets from articles using a language model.
+
+    This generator converts articles into triplet-based representations using
+    a prompt-based LLM pipeline. It performs input validation, prompt construction,
+    batching, inference, and parsing of the model's output into structured data.
+
+    Inherits:
+        DatasetGenerator: Provides dataset generation interface.
+        RateCalculator: Provides rate calculation utilities (prompts per minute).
+
+    Attributes:
+        template (str): Prompt template used for generation.
+        model_id (str): Hugging Face model ID.
+        device (str): Device for running the model (e.g., 'cuda', 'cpu').
+        batch_size (int): Batch size for generation.
+    """
+
     def __init__(
         self,
         template: str = preference_prompt_template,
@@ -238,6 +407,17 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
         cache_dir: Optional[Path] = None,
         task: str = "text-generation",
     ) -> None:
+        """
+        Initialize the PreferenceDatasetGenerator.
+
+        Args:
+            template (str): Prompt template for the LLM.
+            model_id (str): Hugging Face model ID.
+            device (str): Device to run the model on ('cuda', 'cpu').
+            batch_size (int): Number of prompts processed per batch.
+            cache_dir (Optional[Path]): Local cache directory for models/tokenizers.
+            task (str): Type of task, default is 'text-generation'.
+        """
         self._template = template
         self._model_id = model_id
         self._device = device
@@ -259,20 +439,60 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
 
     @property
     def model_id(self) -> str:
+        """Returns the model ID."""
         return self._model_id
 
     @property
     def max_input_length(self) -> int:
+        """Returns the maximum input length allowed by the model."""
         return self._model.config.max_position_embeddings
 
-    def _get_prompt(self, document: CleanedArticle) -> GenerateDatasetSamplesPrompt:
+    def _is_valid_article(self, content: str) -> bool:
+        """
+        Checks whether the input article is valid for processing.
+
+        Args:
+            content (str): The article text.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+        if not content or content.strip() == "":
+            logger.warning("Empty article detected and skipped.")
+            return False
+
+        prompt = self._template.format(article=content)
+        num_tokens = len(self._tokenizer.encode(prompt))
+
+        if num_tokens > self.max_input_length:
+            logger.warning(
+                "Article too long (%d tokens, max %d). Skipping.",
+                num_tokens,
+                self.max_input_length,
+            )
+            return False
+
+        return True
+
+    def _get_prompt(self, document: CleanedArticle) -> Optional[GenerateDatasetSamplesPrompt]:
+        """
+        Constructs a prompt for a single document.
+
+        Args:
+            document (CleanedArticle): The document to generate the prompt from.
+
+        Returns:
+            GenerateDatasetSamplesPrompt | None: The generated prompt object or None if invalid.
+        """
+        if not self._is_valid_article(document.content):
+            return None
+
         input_variables = {"article": document.content}
         prompt = self._template.format(**input_variables)
-        prompt_tokens = self._tokenizer.encode(prompt)
-        num_tokens = len(prompt_tokens)
+        num_tokens = len(self._tokenizer.encode(prompt))
 
-        generated_dataset_sample = GenerateDatasetSamplesPrompt(
-            template=preference_prompt_template,
+        return GenerateDatasetSamplesPrompt(
+            template=self._template,
             input_variables=input_variables,
             content=prompt,
             num_tokens=num_tokens,
@@ -280,12 +500,32 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
             document=document,
         )
 
-        return generated_dataset_sample
-
     def _get_prompts(self, documents: list[CleanedArticle]) -> list[GenerateDatasetSamplesPrompt]:
-        return [self._get_prompt(document) for document in documents]
+        """Generates prompts for a list of documents.
 
-    def _create_messages(self, article: str) -> List[Dict[str, str]]:
+        Args:
+            documents (list[CleanedArticle]): A list of cleaned articles.
+
+        Returns:
+            list[GenerateDatasetSamplesPrompt]: List of valid prompts.
+        """
+        prompts = []
+        for doc in documents:
+            prompt = self._get_prompt(doc)
+            if prompt is not None:
+                prompts.append(prompt)
+        return prompts
+
+    def _create_messages(self, content: str) -> List[Dict[str, str]]:
+        """Formats the input content into a chat-based message structure.
+
+        Args:
+            content (str): Article content.
+
+        Returns:
+            List[Dict[str, str]]: Message structure compatible with the tokenizer's
+            chat template.
+        """
         return [
             {
                 "role": "system",
@@ -293,11 +533,19 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
             },
             {
                 "role": "user",
-                "content": preference_prompt_template.format(article=article),
+                "content": self._template.format(article=content),
             },
         ]
 
     def _process_batch(self, prompt_batch: List[GenerateDatasetSamplesPrompt]):
+        """Processes a batch of prompts to generate summaries.
+
+        Args:
+            prompt_batch (List[GenerateDatasetSamplesPrompt]): A batch of prompts.
+
+        Returns:
+            List[str]: List of generated summary responses.
+        """
         # Create messages for all prompts in the batch
         messages_batch = [self._create_messages(prompt.content) for prompt in prompt_batch]
 
@@ -320,11 +568,22 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
             for output_ids, input_length in zip(generated_ids, input_lengths, strict=False)
         ]
 
+        del model_inputs, generated_ids
+
         torch.cuda.empty_cache()
 
         return responses
 
     def _process_batches(self, prompts: List[GenerateDatasetSamplesPrompt]) -> List[Dict[str, str]]:
+        """Processes all prompts in batches.
+
+        Args:
+            prompts (List[GenerateDatasetSamplesPrompt]): List of prompts.
+
+        Returns:
+            Tuple[List[str], List[str]]: Tuple containing article contents and
+            their generated summaries.
+        """
         articles, responses = [], []
 
         self._start_time = time.time()
@@ -343,18 +602,35 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
         return articles, responses
 
     def _clean_markdown_block(self, triplet_str: str) -> Dict[str, Any]:
-        """Removes markdown syntax and parses JSON string into a dictionary."""
+        """
+        Removes markdown syntax from JSON block and parses it.
+
+        Args:
+            triplet_str (str): Markdown block with JSON content.
+
+        Returns:
+            Dict[str, Any]: Parsed JSON object.
+        """
         clean_string = re.sub(r"```(?:json)?\s*|\s*```", "", triplet_str, flags=re.DOTALL).strip()
         return json.loads(clean_string)
 
     def _parse_preference_sample(self, article: str, response: str) -> Optional[PreferenceDatasetSample]:
-        """Parses response JSON into a PreferenceDatasetSample instance."""
+        """
+        Parses the response string into a PreferenceDatasetSample.
+
+        Args:
+            article (str): The input article.
+            response (str): The LLM response.
+
+        Returns:
+            PreferenceDatasetSample | None: The parsed sample or None if parsing fails.
+        """
         try:
             parsed = self._clean_markdown_block(response)
             sample_dict = {"article": article, "triplets": parsed["triplets"]}
             return PreferenceDatasetSample(**sample_dict)
         except (JSONDecodeError, TypeError, KeyError) as err:
-            logger.error("Invalid character found trying to parse triplet: %s", err)
+            logger.error("Failed to parse triplet JSON: %s", err)
         except ValidationError as err:
             error_info = err.errors()[0]
             logger.error(
@@ -368,7 +644,16 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
         return None
 
     def _extract_triplets(self, articles: List[str], responses: List[str]) -> List[PreferenceDatasetSample]:
-        """Extracts structured triplet data from article-response pairs."""
+        """
+        Extracts triplet samples from article-response pairs.
+
+        Args:
+            articles (List[str]): List of articles.
+            responses (List[str]): Corresponding generated responses.
+
+        Returns:
+            List[PreferenceDatasetSample]: List of valid samples.
+        """
         samples = []
         for article, response in zip(articles, responses, strict=False):
             sample = self._parse_preference_sample(article, response)
@@ -377,11 +662,37 @@ class PreferenceDatasetGenerator(DatasetGenerator, RateCalculator):
         return samples
 
     def _format_preference_output(self, articles: List[str], responses: List[str]) -> PreferenceDataset:
-        """Formats parsed samples into a PreferenceDataset."""
+        """
+        Formats the articles and responses into a PreferenceDataset.
+
+        Args:
+            articles (List[str]): Articles.
+            responses (List[str]): Responses.
+
+        Returns:
+            PreferenceDataset: Structured dataset object.
+        """
         samples = self._extract_triplets(articles, responses)
         return PreferenceDataset(samples=samples)
 
     def generate(self, documents: List[CleanedArticle]) -> PreferenceDataset:
+        """Generates a preference dataset from a list of cleaned articles.
+
+        Args:
+            documents (List[CleanedArticle]): List of cleaned article documents.
+
+        Returns:
+            PreferenceDataset: Generated dataset with article-preference-triplet samples.
+
+        Example:
+            >>> generator = PreferenceDatasetGenerator()
+            >>> dataset = generator.generate(list_of_articles)
+        """
         prompts = self._get_prompts(documents)
+
+        if not prompts:
+            logger.warning("No valid prompts to process. Exiting generation.")
+            return SummaryDataset(samples=[])
+
         articles, responses = self._process_batches(prompts)
         return self._format_preference_output(articles, responses)
