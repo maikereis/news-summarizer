@@ -3,7 +3,7 @@ import logging
 
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import InvalidSessionIdException
-from urllib3 import HTTPConnectionPool
+from urllib3.exceptions import HTTPError
 
 from news_summarizer.domain.documents import Article
 from news_summarizer.utils import clean_html
@@ -49,8 +49,8 @@ class G1Scraper(BaseSeleniumScraper):
             logger.error("Value error scraping link %s: %s", article_link, ve)
         except InvalidSessionIdException as ise:
             logger.error("Invalid session while scraping link %s: %s", article_link, ise)
-        except HTTPConnectionPool as hcp_ex:
-            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except HTTPError as ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, ex)
         except Exception as ex:
             logger.error("Error while scraping link %s: %s", article_link, ex)
             raise  # Re-raise if you want to propagate the original exception
@@ -137,8 +137,8 @@ class R7Scraper(BaseSeleniumScraper):
             logger.error("Value error scraping link %s: %s", article_link, ve)
         except InvalidSessionIdException as ise:
             logger.error("Invalid session while scraping link %s: %s", article_link, ise)
-        except HTTPConnectionPool as hcp_ex:
-            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except HTTPError as ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, ex)
         except Exception as ex:
             logger.error("Error while scraping link %s: %s", article_link, ex)
             raise  # Re-raise if you want to propagate the original exception
@@ -240,8 +240,8 @@ class BandScraper(BaseSeleniumScraper):
             logger.error("Value error scraping link %s: %s", article_link, ve)
         except InvalidSessionIdException as ise:
             logger.error("Invalid session while scraping link %s: %s", article_link, ise)
-        except HTTPConnectionPool as hcp_ex:
-            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except HTTPError as ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, ex)
         except Exception as ex:
             logger.error("Error while scraping link %s: %s", article_link, ex)
             raise  # Re-raise if you want to propagate the original exception
@@ -366,8 +366,8 @@ class BBCBrasilScraper(BaseSeleniumScraper):
             logger.error("Value error scraping link %s: %s", article_link, ve)
         except InvalidSessionIdException as ise:
             logger.error("Invalid session while scraping link %s: %s", article_link, ise)
-        except HTTPConnectionPool as hcp_ex:
-            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except HTTPError as ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, ex)
         except Exception as ex:
             logger.error("Error while scraping link %s: %s", article_link, ex)
             raise  # Re-raise if you want to propagate the original exception
@@ -379,7 +379,7 @@ class BBCBrasilScraper(BaseSeleniumScraper):
 
     def _extract_title(self, soup: BeautifulSoup):
         try:
-            return soup.find("h1", class_="bbc-14gqcmb e1p3vdyi0").text
+            return soup.find("h1", class_="article-heading bbc-14gqcmb e1p3vdyi0").text
         except AttributeError as e:
             logger.error("Error extracting title: %s", e)
             raise ValueError("Title not found") from e
@@ -451,8 +451,8 @@ class CNNBrasilScraper(BaseSeleniumScraper):
             logger.error("Value error scraping link %s: %s", article_link, ve)
         except InvalidSessionIdException as ise:
             logger.error("Invalid session while scraping link %s: %s", article_link, ise)
-        except HTTPConnectionPool as hcp_ex:
-            logger.error("HTTP error while scraping link %s: %s", article_link, hcp_ex)
+        except HTTPError as ex:
+            logger.error("HTTP error while scraping link %s: %s", article_link, ex)
         except Exception as ex:
             logger.error("Error while scraping link %s: %s", article_link, ex)
             raise  # Re-raise if you want to propagate the original exception
@@ -464,7 +464,7 @@ class CNNBrasilScraper(BaseSeleniumScraper):
 
     def _extract_title(self, soup: BeautifulSoup):
         try:
-            title = soup.find("h1", class_="single-header__title").text
+            title = soup.find("h1", class_="font-bold text-3xl lg:text-4xl").text
         except AttributeError as at:
             logger.error("Error trying to extract title, %s", at)
             raise ValueError("Error trying to extract title") from at
@@ -481,7 +481,7 @@ class CNNBrasilScraper(BaseSeleniumScraper):
 
     def _extract_subtitle(self, soup: BeautifulSoup):
         try:
-            subtitle = soup.find("p", class_="single-header__excerpt").text
+            subtitle = soup.find("h2", class_="text-lg font-normal").text
         except AttributeError as at:
             logger.warning("Can't extract subtitle, %s", at)
             return None
@@ -498,7 +498,7 @@ class CNNBrasilScraper(BaseSeleniumScraper):
 
     def _extract_publication_date(self, soup: BeautifulSoup):
         try:
-            time_element = soup.find("time", class_="single-header__time")
+            time_element = soup.find("time", class_="text-sm font-normal text-neutral-400")
             time_text = time_element.text.strip()
 
             # Check if "Atualizado" is present in the text
@@ -508,8 +508,13 @@ class CNNBrasilScraper(BaseSeleniumScraper):
                 date_text = time_text.split("|")[0].strip()
 
             # Convert the date text to a datetime object
-            date_format = "%d/%m/%Y às %H:%M"
-            publication_date = datetime.datetime.strptime(date_text, date_format)
+
+            try:
+                date_format = "%d/%m/%y às %H:%M:%S"
+                publication_date = datetime.datetime.strptime(date_text, date_format)
+            except ValueError:
+                date_format = "%d/%m/%y às %H:%M"
+                publication_date = datetime.datetime.strptime(date_text, date_format)
 
         except AttributeError as at:
             logger.warning("Can't extract publication date, %s", at)
